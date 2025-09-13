@@ -26,7 +26,7 @@ pytest==8.4.2
 pytest-flask==1.3.0
 
 # PostgreSQL Driver
-psycopg2==2.9.10
+psycopg2-binary==2.9.10
 
 # Additional Dependencies
 # These are required by the packages above but not directly imported

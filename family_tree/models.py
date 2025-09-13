@@ -6,9 +6,9 @@ from flask_login import UserMixin
 from family_tree import db, bcrypt
     
 class GenderEnum(enum.Enum):
-    MALE = "Male"
-    FEMALE = "Female"
-    OTHER = "Other"
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)

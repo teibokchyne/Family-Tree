@@ -30,4 +30,4 @@ class UpsertPersonForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     middle_name = StringField('Middle Name')
     last_name = StringField('Last Name', validators=[DataRequired()])
-    submit = SubmitField('Add Person')
+    submit = SubmitField('Add/Edit Person')

@@ -3,7 +3,7 @@ import pytest
 
 import family_tree
 
-from family_tree import create_app, db
+from family_tree import create_app, db as _db
 from family_tree.models import User, Person
 from tests.testconfig import TestConfig
 
@@ -12,29 +12,32 @@ def app():
     app = create_app(config_class=TestConfig)
 
     with app.app_context():
-        db.create_all()
+        _db.create_all()
         yield app
-        db.session.remove()
-        db.drop_all()
+        _db.session.remove()
+        _db.drop_all()
 
 @pytest.fixture()
 def client(app):
     return app.test_client()
 
 @pytest.fixture()
-def sample_user(client):
-    client.post('/register', data=dict(
-        username='testuser',    
-        email='test@test.com',
-        password='password'
-        ), follow_redirects=True)
-    user = User.query.filter_by(username='testuser', email='test@test.com').first()
-    return user
+def db(app):
+    return _db
 
 @pytest.fixture()
-def authenticated_user(sample_user, client):
-    client.post('/login', data=dict(
-        email = sample_user.email,
-        password='password'
-    ), follow_redirects=True)
-    return sample_user
+def registered_user(client):
+    client.post('/register', data={
+        'username': 'sampleuser',
+        'email': 'sampleuser@example.com',
+        'password': 'pass'
+    }, follow_redirects=True)
+    return User.query.filter_by(email='sampleuser@example.com').first()
+
+@pytest.fixture()
+def logged_in_client(client, registered_user):
+    client.post('/login', data={
+        'email': registered_user.email,
+        'password': 'pass'
+    }, follow_redirects=True)
+    return client
