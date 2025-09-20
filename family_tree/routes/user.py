@@ -291,3 +291,25 @@ def add_important_date():
         'user/add_important_date.html',
         form=form
     )
+
+@bp.route('/delete_important_date/<int:date_id>', methods=['POST'])
+@login_required 
+def delete_important_date(date_id):
+    """
+    Handle deletion of an important date.
+    """
+    app.logger.info(
+        f"User {current_user.username} attempting to delete important date ID {date_id}.")
+    important_date = cursor.query(db, ImportantDates, filter_by=True,
+                                  id=date_id, user_id=current_user.id).first()
+    if not important_date:
+        app.logger.warning(
+            f"Important date ID {date_id} not found for user {current_user.username}.")
+        flash('Important date not found.', 'danger')
+        return redirect(url_for('user.display_important_dates'))
+
+    cursor.delete(db, ImportantDates, id=date_id, user_id=current_user.id)
+    flash('Important date deleted successfully!', 'success')
+    app.logger.info(
+        f"Important date ID {date_id} deleted for user {current_user.username}.")
+    return redirect(url_for('user.display_important_dates'))

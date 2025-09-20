@@ -576,3 +576,57 @@ class TestUserRoutes:
         dates = ImportantDates.query.filter_by(user_id=user.id).all()
         assert any(d.date_type.name == 'BIRTH' and d.date ==
                    datetime.date(2000, 1, 1) for d in dates)
+
+    def test_delete_important_date_success(self, client):
+        from family_tree.models import ImportantDates
+        import datetime
+        # Register and log in
+        client.post('/register', data={
+            'username': 'deldateuser',
+            'email': 'deldateuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'deldateuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Add an important date
+        client.post('/add_important_date', data={
+            'date_type': 'BIRTH',
+            'date': '1999-12-31',
+        }, follow_redirects=True)
+
+        # Get the date id
+        user = User.query.filter_by(email='deldateuser@example.com').first()
+        date_obj = ImportantDates.query.filter_by(user_id=user.id).first()
+        assert date_obj is not None
+        date_id = date_obj.id
+
+        # Delete the important date
+        response = client.post(
+            f'/delete_important_date/{date_id}', follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Important date deleted successfully!' in response.data
+
+        # Confirm it is deleted
+        date_obj = ImportantDates.query.filter_by(id=date_id).first()
+        assert date_obj is None
+
+    def test_delete_important_date_not_found(self, client):
+        # Register and log in
+        client.post('/register', data={
+            'username': 'deldateuser2',
+            'email': 'deldateuser2@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'deldateuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Try to delete a non-existent important date
+        response = client.post(
+            '/delete_important_date/9999', follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Important date not found.' in response.data or b'No important dates found.' in response.data
