@@ -292,6 +292,43 @@ def add_important_date():
         form=form
     )
 
+@bp.route('/edit_important_date/<int:date_id>', methods=['GET', 'POST'])
+@login_required 
+def edit_important_date(date_id):
+    """
+    Render the edit important date page for a specific important date.
+    """
+    app.logger.info(
+        f"Rendering edit important date page for user {current_user.username}, date ID {date_id}.")
+    important_date = cursor.query(db, ImportantDates, filter_by=True,
+                                  id=date_id, user_id=current_user.id).first()
+    if not important_date:
+        app.logger.warning(
+            f"Important date ID {date_id} not found for user {current_user.username}.")
+        flash('Important date not found.', 'danger')
+        return redirect(url_for('user.display_important_dates'))
+
+    form = UpsertImportantDateForm()
+    form.date_type.choices = [(e.name, e.value) for e in ImportantDateTypeEnum]
+    if request.method == 'GET':
+        form.date_type.data = important_date.date_type.name
+        form.date.data = important_date.date
+
+    if form.validate_on_submit():
+        important_date.date_type = ImportantDateTypeEnum(form.date_type.data)
+        important_date.date = form.date.data
+        db.session.commit()
+        flash('Important date updated successfully!', 'success')
+        app.logger.info(
+            f"Important date ID {date_id} updated for user {current_user.username}.")
+        return redirect(url_for('user.display_important_dates'))
+
+    return render_template(
+        'user/edit_important_date.html',
+        form=form,
+        important_date=important_date
+    )
+
 @bp.route('/delete_important_date/<int:date_id>', methods=['POST'])
 @login_required 
 def delete_important_date(date_id):

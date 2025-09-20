@@ -8,7 +8,8 @@
 				<tr>
 					<th>Type</th>
 					<th>Date</th>
-                    <th>Delete</th>
+          <th>Edit</th>
+          <th>Delete</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -16,11 +17,14 @@
 				<tr>
 					<td>{{ date.date_type.value.title() }}</td>
 					<td>{{ date.date.strftime('%Y-%m-%d') }}</td>
-            <td>
-              <form method="POST" action="{{ url_for('user.delete_important_date', date_id=date.id) }}">
-                <input type="submit" value="Delete" class="btn btn-danger btn-sm">
-              </form>
-            </td>
+          <td>
+            <a href="{{ url_for('user.edit_important_date', date_id=date.id) }}" class="btn btn-primary">Edit</a>
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('user.delete_important_date', date_id=date.id) }}">
+              <input type="submit" value="Delete" class="btn btn-danger btn-sm">
+            </form>
+          </td>
 				</tr>
 				{% endfor %}
 			</tbody>

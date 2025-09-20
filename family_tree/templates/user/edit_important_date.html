@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+	<h2 class="mb-4">Edit Important Date</h2>
+	<form method="POST" action="">
+		{{ form.hidden_tag() }}
+		<div class="mb-3">
+			{{ form.date_type.label(class="form-label") }}
+			{{ form.date_type(class="form-select") }}
+			{% for error in form.date_type.errors %}
+				<div class="text-danger small">{{ error }}</div>
+			{% endfor %}
+		</div>
+		<div class="mb-3">
+			{{ form.date.label(class="form-label") }}
+			{{ form.date(class="form-control", placeholder="YYYY-MM-DD") }}
+			{% for error in form.date.errors %}
+				<div class="text-danger small">{{ error }}</div>
+			{% endfor %}
+		</div>
+		<button type="submit" class="btn btn-success">Update Date</button>
+		<a href="{{ url_for('user.display_important_dates') }}" class="btn btn-secondary ms-2">Cancel</a>
+	</form>
+</div>
+{% endblock %}

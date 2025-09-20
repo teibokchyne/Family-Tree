@@ -630,3 +630,63 @@ class TestUserRoutes:
             '/delete_important_date/9999', follow_redirects=True)
         assert response.status_code == 200 or response.status_code == 302
         assert b'Important date not found.' in response.data or b'No important dates found.' in response.data
+
+    def test_edit_important_date_success(self, client):
+        from family_tree.models import ImportantDates
+        import datetime
+        # Register and log in
+        client.post('/register', data={
+            'username': 'editdateuser',
+            'email': 'editdateuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'editdateuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Add an important date
+        client.post('/add_important_date', data={
+            'date_type': 'BIRTH',
+            'date': '1980-01-01',
+        }, follow_redirects=True)
+
+        # Get the date id
+        user = User.query.filter_by(email='editdateuser@example.com').first()
+        date_obj = ImportantDates.query.filter_by(user_id=user.id).first()
+        assert date_obj is not None
+        date_id = date_obj.id
+
+        # Edit the important date
+        response = client.post(f'/edit_important_date/{date_id}', data={
+            'date_type': 'MARRIAGE',
+            'date': '2005-05-05',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Important date updated successfully!' in response.data
+
+        # Confirm update in database
+        updated = ImportantDates.query.filter_by(id=date_id).first()
+        assert updated is not None
+        assert updated.date_type.name == 'MARRIAGE'
+        assert updated.date == datetime.date(2005, 5, 5)
+
+    def test_edit_important_date_not_found(self, client):
+        # Register and log in
+        client.post('/register', data={
+            'username': 'editdateuser2',
+            'email': 'editdateuser2@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'editdateuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Try to edit a non-existent important date
+        response = client.post('/edit_important_date/9999', data={
+            'date_type': 'BIRTH',
+            'date': '2020-01-01',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Important date not found.' in response.data or b'No important dates found.' in response.data

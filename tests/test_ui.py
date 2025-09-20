@@ -80,3 +80,20 @@ class TestUserUI:
         assert response.status_code == 200
         assert b'Edit Address' in response.data
         assert b'Address Line 1' in response.data
+
+    def test_important_dates_page_renders(self, client):
+        client.post('/register', data={
+            'username': 'uiuser4',
+            'email': 'uiuser4@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'uiuser4@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+        response = client.get('/display_important_dates')
+        assert response.status_code == 200
+        assert b'Important Dates' in response.data
+        # Should show table or info message
+        assert (
+            b'<table' in response.data or b'No important dates found.' in response.data)
