@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <h2 class="mb-4">Edit Address</h2>
+        <form method="POST" action="">
+          {{ form.hidden_tag() }}
+          <div class="form-check mb-3">
+            {{ form.is_permanent(class="form-check-input") }}
+            {{ form.is_permanent.label(class="form-check-label") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.first_line.label(class="form-label") }}
+            {{ form.first_line(class="form-control", placeholder="Address Line 1") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.second_line.label(class="form-label") }}
+            {{ form.second_line(class="form-control", placeholder="Address Line 2") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.pin_code.label(class="form-label") }}
+            {{ form.pin_code(class="form-control", placeholder="Pin Code") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.state.label(class="form-label") }}
+            {{ form.state(class="form-control", placeholder="State") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.country.label(class="form-label") }}
+            {{ form.country(class="form-control", placeholder="Country") }}
+          </div>
+          <div class="form-group mb-3">
+            {{ form.landmark.label(class="form-label") }}
+            {{ form.landmark(class="form-control", placeholder="Landmark") }}
+          </div>
+          <div class="form-group">
+            {{ form.submit(class="btn btn-success w-100", value="Update Address") }}
+          </div>
+        </form>
+        <hr>
+        <h4>Address Info</h4>
+        <ul class="list-group">
+          <li class="list-group-item"><strong>Type:</strong> {{ 'Permanent' if address.is_permanent else 'Current' }}</li>
+          <li class="list-group-item"><strong>Address:</strong> {{ address.first_line }}{% if address.second_line %}, {{ address.second_line }}{% endif %}</li>
+          <li class="list-group-item"><strong>Landmark:</strong> {{ address.landmark }}</li>
+          <li class="list-group-item"><strong>State:</strong> {{ address.state }}</li>
+          <li class="list-group-item"><strong>Country:</strong> {{ address.country }}</li>
+          <li class="list-group-item"><strong>Pin Code:</strong> {{ address.pin_code }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}
