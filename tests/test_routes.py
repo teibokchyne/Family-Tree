@@ -3,7 +3,9 @@ import pytest
 from flask_login import current_user
 
 from family_tree.models import (
-    User
+    User,
+    Person,
+    Relatives
 )
 
 
@@ -78,7 +80,6 @@ class TestCommonRoutes:
         print(response.data.decode())
         assert b'Welcome to Family Tree. Please log in to continue' in response.data
         assert not current_user.is_authenticated
-
 
 class TestUserRoutes:
     def test_profile_creation(self, client):
@@ -863,3 +864,74 @@ class TestUserRoutes:
             '/delete_contact_details/9999', follow_redirects=True)
         assert response.status_code == 200 or response.status_code == 302
         assert b'Contact details not found.' in response.data or b'No contact details found.' in response.data
+
+    def test_add_relative_success(self, client):
+        # Create two users with profiles
+
+        # Create user
+        client.post('/register', data={
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'pass'
+        })
+
+        # Login
+        client.post('/login', data={
+            'email': 'newuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Create profile
+        client.post('/profile', data={
+            'first_name': 'John',
+            'middle_name': 'M',
+            'last_name': 'Doe',
+            'gender': 'MALE'
+        })
+
+        # Logout
+        client.get('/logout')
+
+        # Create second user
+        client.post('/register', data={
+            'username': 'newuser2',
+            'email': 'newuser2@example.com',
+            'password': 'pass'
+        })
+
+        # Login as second user
+        client.post('/login', data={
+            'email': 'newuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Create profile for second user
+        client.post('/profile', data={
+            'first_name': 'Jane',
+            'middle_name': 'M',
+            'last_name': 'Doe',
+            'gender': 'FEMALE'
+        })
+
+        response = client.post('/add_relative', data={
+            'relative_user_id' : 1,
+            'relation_type' : 'PARENT'
+        }, follow_redirects=True)
+
+        # print(response.data.decode())
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Relative added successfully!' in response.data
+
+        # Make sure that the relationship created was correct
+        relation = Relatives.query.filter_by(id=1).first()
+        assert relation is not None
+        assert relation.user_id==2 
+        assert relation.relative_user_id == 1
+        assert relation.relation_type.value == 'PARENT'
+
+        # Make sure that the reverse relationship created was correct
+        reverse_relation = Relatives.query.filter_by(id=2).first()
+        assert reverse_relation is not None 
+        assert reverse_relation.user_id == 1
+        assert reverse_relation.relative_user_id == 2
+        assert reverse_relation.relation_type.value == 'CHILD'

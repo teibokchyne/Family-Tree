@@ -10,7 +10,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
     person = db.relationship('Person', backref='user',
@@ -23,7 +23,7 @@ class User(db.Model, UserMixin):
         'ContactDetails', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def create_password_hash(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password)
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
@@ -88,7 +88,7 @@ class ContactDetails(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     country_code = db.Column(db.Integer)
-    mobile_no = db.Column(db.String)
+    mobile_no = db.Column(db.String(15))
     email = db.Column(db.String(120))
 
 
@@ -108,7 +108,7 @@ class RelativesTypeEnum(enum.Enum):
 class Relatives(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    relative_id = db.Column(
+    relative_user_id = db.Column(
         db.Integer, db.ForeignKey('user.id'), nullable=False)
     # e.g., 'parent', 'sibling', 'child'
     relation_type = db.Column(db.Enum(RelativesTypeEnum), nullable=False)

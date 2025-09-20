@@ -43,7 +43,7 @@ def get_relative_details(db, table, relatives):
     relative_details = []
     for rel in relatives:
         relative_user = cursor.query(
-            db, table, filter_by=True, id=rel.relative_id).first()
+            db, table, filter_by=True, id=rel.relative_user_id).first()
         person = relative_user.person
         if person:
             relative_details.append({
@@ -83,7 +83,7 @@ def check_relative_constraints(db, user_table, relatives_table, user, form):
         relatives_table,
         filter_by=True,
         user_id=user.id,
-        relative_id=int(form.relative_user_id.data)).first()
+        relative_user_id=int(form.relative_user_id.data)).first()
     if existing_relation:
         app.logger.warning("User attempted to add more than one relationship to a relative.")
         flash("This relationship already exists.", "danger")
@@ -104,14 +104,14 @@ def add_relative_to_database(db, relative_table, relative_enum, user, form):
         db,
         relative_table,
         user_id=user.id,
-        relative_id=int(form.relative_user_id.data),
+        relative_user_id=int(form.relative_user_id.data),
         relation_type=relative_enum(form.relation_type.data)
     )
     cursor.add(
         db,
         relative_table,
         user_id=int(form.relative_user_id.data),
-        relative_id=user.id,
+        relative_user_id=user.id,
         relation_type=relative_enum(
            relative_table.get_reverse_relation(form.relation_type.data)
            )
