@@ -1,3 +1,4 @@
+# Add Contact Details
 from flask import (
     Blueprint,
     render_template,
@@ -7,32 +8,28 @@ from flask import (
     request,
     current_app as app
 )
-
-from flask_login import current_user, login_required
-
-from family_tree import db
-
-from family_tree.forms import (
-    UpsertPersonForm,
-    UpsertAddressForm,
-    UpsertImportantDateForm
-)
-
-from family_tree.models import (
-    GenderEnum,
-    Person,
-    Address,
-    ImportantDateTypeEnum,
-    ImportantDates
-)
-
+from family_tree.cursor import Cursor
 from family_tree.services.user import (
     update_person,
     prefill_address_form,
     fill_address_from_form
 )
-
-from family_tree.cursor import Cursor
+from family_tree.models import (
+    GenderEnum,
+    Person,
+    Address,
+    ImportantDateTypeEnum,
+    ImportantDates,
+    ContactDetails
+)
+from family_tree.forms import (
+    UpsertPersonForm,
+    UpsertAddressForm,
+    UpsertImportantDateForm,
+    UpsertContactDetailsForm
+)
+from family_tree import db
+from flask_login import current_user, login_required
 
 cursor = Cursor()
 
@@ -47,14 +44,16 @@ def restrict_access_to_user():
     else:
         app.logger.info(f"User {current_user.username} accessed user routes.")
 
+
 @bp.route('/dashboard')
-@login_required 
+@login_required
 def dashboard():
     """
     Render the user dashboard page.
     """
     app.logger.info(f"Rendering dashboard for user {current_user.get_id()}.")
     return render_template('user/dashboard.html')
+
 
 @bp.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -207,6 +206,7 @@ def edit_address(address_id):
         address=address
     )
 
+
 @bp.route('/display_address/<int:address_id>')
 @login_required
 def display_address(address_id):
@@ -227,6 +227,7 @@ def display_address(address_id):
         'user/display_address.html',
         address=address
     )
+
 
 @bp.route('/delete_address/<int:address_id>', methods=['POST'])
 @login_required
@@ -251,6 +252,7 @@ def delete_address(address_id):
 
     return redirect(url_for('user.address'))
 
+
 @bp.route('/display_important_dates')
 @login_required
 def display_important_dates():
@@ -264,6 +266,7 @@ def display_important_dates():
         'user/display_important_dates.html',
         important_dates=current_user.important_dates
     )
+
 
 @bp.route('/add_important_date', methods=['GET', 'POST'])
 @login_required
@@ -285,15 +288,17 @@ def add_important_date():
             date=form.date.data
         )
         flash('Important date added successfully!', 'success')
-        app.logger.info(f"Important date added for user {current_user.username}.")
+        app.logger.info(
+            f"Important date added for user {current_user.username}.")
         return redirect(url_for('user.add_important_date'))
     return render_template(
         'user/add_important_date.html',
         form=form
     )
 
+
 @bp.route('/edit_important_date/<int:date_id>', methods=['GET', 'POST'])
-@login_required 
+@login_required
 def edit_important_date(date_id):
     """
     Render the edit important date page for a specific important date.
@@ -329,8 +334,9 @@ def edit_important_date(date_id):
         important_date=important_date
     )
 
+
 @bp.route('/delete_important_date/<int:date_id>', methods=['POST'])
-@login_required 
+@login_required
 def delete_important_date(date_id):
     """
     Handle deletion of an important date.
@@ -350,3 +356,99 @@ def delete_important_date(date_id):
     app.logger.info(
         f"Important date ID {date_id} deleted for user {current_user.username}.")
     return redirect(url_for('user.display_important_dates'))
+
+@bp.route('/display_contact_details')
+@login_required
+def display_contact_details():
+    """
+    Render the contact details page for the user.
+    """
+    app.logger.info(
+        f"Rendering contact details page for user {current_user.username}.")
+
+    return render_template(
+        'user/display_contact_details.html',
+        contact_details=current_user.contact_details
+    )
+
+@bp.route('/add_contact_details', methods=['GET', 'POST'])
+@login_required
+def add_contact_details():
+    """
+    Render the add contact details page.
+    """
+    app.logger.info(
+        f"Rendering add contact details page for user {current_user.username}.")
+    form = UpsertContactDetailsForm()
+    if form.validate_on_submit():
+        cursor.add(
+            db,
+            ContactDetails,
+            user_id=current_user.id,
+            country_code=form.country_code.data,
+            mobile_no=str(form.mobile_no.data),
+            email=form.email.data
+        )
+        flash('Contact details added successfully!', 'success')
+        app.logger.info(
+            f"Contact details added for user {current_user.username}.")
+        return redirect(url_for('user.display_contact_details'))
+    return render_template('user/add_contact_details.html', form=form)
+
+# Edit Contact Details
+@bp.route('/edit_contact_details/<int:contact_id>', methods=['GET', 'POST'])
+@login_required
+def edit_contact_details(contact_id):
+    """
+    Render the edit contact details page for a specific contact.
+    """
+    app.logger.info(
+        f"Rendering edit contact details page for user {current_user.username}, contact ID {contact_id}.")
+    contact = cursor.query(db, ContactDetails, filter_by=True,
+                           id=contact_id, user_id=current_user.id).first()
+    if not contact:
+        app.logger.warning(
+            f"Contact details ID {contact_id} not found for user {current_user.username}.")
+        flash('Contact details not found.', 'danger')
+        return redirect(url_for('user.display_contact_details'))
+
+    form = UpsertContactDetailsForm()
+    if request.method == 'GET':
+        form.country_code.data = contact.country_code
+        form.mobile_no.data = int(contact.mobile_no)
+        form.email.data = contact.email
+
+    if form.validate_on_submit():
+        contact.country_code = form.country_code.data
+        contact.mobile_no = str(form.mobile_no.data)
+        contact.email = form.email.data
+        db.session.commit()
+        flash('Contact details updated successfully!', 'success')
+        app.logger.info(
+            f"Contact details ID {contact_id} updated for user {current_user.username}.")
+        return redirect(url_for('user.display_contact_details'))
+
+    return render_template('user/edit_contact_details.html', form=form, contact=contact)
+
+# Delete Contact Details
+@bp.route('/delete_contact_details/<int:contact_id>', methods=['POST'])
+@login_required
+def delete_contact_details(contact_id):
+    """
+    Handle deletion of contact details.
+    """
+    app.logger.info(
+        f"User {current_user.username} attempting to delete contact details ID {contact_id}.")
+    contact = cursor.query(db, ContactDetails, filter_by=True,
+                           id=contact_id, user_id=current_user.id).first()
+    if not contact:
+        app.logger.warning(
+            f"Contact details ID {contact_id} not found for user {current_user.username}.")
+        flash('Contact details not found.', 'danger')
+        return redirect(url_for('user.display_contact_details'))
+
+    cursor.delete(db, ContactDetails, id=contact_id, user_id=current_user.id)
+    flash('Contact details deleted successfully!', 'success')
+    app.logger.info(
+        f"Contact details ID {contact_id} deleted for user {current_user.username}.")
+    return redirect(url_for('user.display_contact_details'))

@@ -81,7 +81,6 @@ class TestCommonRoutes:
 
 
 class TestUserRoutes:
-
     def test_profile_creation(self, client):
         client.post('/register', data={
             'username': 'newuser',
@@ -690,3 +689,177 @@ class TestUserRoutes:
         }, follow_redirects=True)
         assert response.status_code == 200 or response.status_code == 302
         assert b'Important date not found.' in response.data or b'No important dates found.' in response.data
+
+    def test_add_contact_details_success(self, client):
+        from family_tree.models import ContactDetails
+        # Register and log in
+        client.post('/register', data={
+            'username': 'contactuser',
+            'email': 'contactuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'contactuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # CASE 1: WHEN ALL FIELDS ARE FILLED
+        # Add contact details
+        response = client.post('/add_contact_details', data={
+            'country_code': 91,
+            'mobile_no': 9876543210,
+            'email': 'contactuser@example.com',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Contact details added successfully!' in response.data
+
+        # Check that the contact is in the database
+        user = User.query.filter_by(email='contactuser@example.com').first()
+        contacts = ContactDetails.query.filter_by(user_id=user.id).all()
+        assert any(c.mobile_no == 9876543210 and c.email ==
+                   'contactuser@example.com' for c in contacts)
+        
+        # CASE 2: WHEN ONLY MOBILE NO IS FILLED
+        # Add contact details
+        response_2 = client.post('/add_contact_details', data={
+            'country_code': 91,
+            'mobile_no': 9876523432,
+        }, follow_redirects=True)
+        assert response_2.status_code == 200 or response_2.status_code == 302
+        assert b'Contact details added successfully!' in response_2.data
+
+        # Check that the contact is in the database
+        user = User.query.filter_by(email='contactuser@example.com').first()
+        contacts = ContactDetails.query.filter_by(user_id=user.id).all()
+        assert any(c.mobile_no == 9876523432 for c in contacts)
+
+        # CASE 3: WHEN ONLY EMAIL FIELD IS FILLED
+        # Add contact details
+        response_3 = client.post('/add_contact_details', data={
+            'email': 'contactuser_RANDOM@example.com',
+        }, follow_redirects=True)
+        assert response_3.status_code == 200 or response_3.status_code == 302
+        assert b'Contact details added successfully!' in response_3.data
+
+        # Check that the contact is in the database
+        user = User.query.filter_by(email='contactuser@example.com').first()
+        contacts = ContactDetails.query.filter_by(user_id=user.id).all()
+        assert any(c.email == 'contactuser_RANDOM@example.com' for c in contacts)
+
+    def test_edit_contact_details_success(self, client):
+        from family_tree.models import ContactDetails
+        # Register and log in
+        client.post('/register', data={
+            'username': 'editcontactuser',
+            'email': 'editcontactuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'editcontactuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Add contact details
+        client.post('/add_contact_details', data={
+            'country_code': 91,
+            'mobile_no': 1234567890,
+            'email': 'editcontactuser@example.com',
+        }, follow_redirects=True)
+
+        # Get the contact id
+        user = User.query.filter_by(
+            email='editcontactuser@example.com').first()
+        contact = ContactDetails.query.filter_by(user_id=user.id).first()
+        assert contact is not None
+        contact_id = contact.id
+
+        # Edit the contact details
+        response = client.post(f'/edit_contact_details/{contact_id}', data={
+            'country_code': 1,
+            'mobile_no': 5555555555,
+            'email': 'newemail@example.com',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Contact details updated successfully!' in response.data
+
+        # Confirm update in database
+        updated = ContactDetails.query.filter_by(id=contact_id).first()
+        assert updated is not None
+        assert updated.country_code == 1
+        assert updated.mobile_no == 5555555555
+        assert updated.email == 'newemail@example.com'
+
+    def test_edit_contact_details_not_found(self, client):
+        # Register and log in
+        client.post('/register', data={
+            'username': 'editcontactuser2',
+            'email': 'editcontactuser2@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'editcontactuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Try to edit a non-existent contact
+        response = client.post('/edit_contact_details/9999', data={
+            'country_code': 1,
+            'mobile_no': 1111111111,
+            'email': 'notfound@example.com',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Contact details not found.' in response.data or b'No contact details found.' in response.data
+
+    def test_delete_contact_details_success(self, client):
+        from family_tree.models import ContactDetails
+        # Register and log in
+        client.post('/register', data={
+            'username': 'delcontactuser',
+            'email': 'delcontactuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'delcontactuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Add contact details
+        client.post('/add_contact_details', data={
+            'country_code': 91,
+            'mobile_no': 2222222222,
+            'email': 'delcontactuser@example.com',
+        }, follow_redirects=True)
+
+        # Get the contact id
+        user = User.query.filter_by(email='delcontactuser@example.com').first()
+        contact = ContactDetails.query.filter_by(user_id=user.id).first()
+        assert contact is not None
+        contact_id = contact.id
+
+        # Delete the contact details
+        response = client.post(
+            f'/delete_contact_details/{contact_id}', follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Contact details deleted successfully!' in response.data
+
+        # Confirm it is deleted
+        deleted = ContactDetails.query.filter_by(id=contact_id).first()
+        assert deleted is None
+
+    def test_delete_contact_details_not_found(self, client):
+        # Register and log in
+        client.post('/register', data={
+            'username': 'delcontactuser2',
+            'email': 'delcontactuser2@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'delcontactuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Try to delete a non-existent contact
+        response = client.post(
+            '/delete_contact_details/9999', follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Contact details not found.' in response.data or b'No contact details found.' in response.data

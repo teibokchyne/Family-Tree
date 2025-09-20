@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Edit Contact Detail</h2>
+  <form method="POST" action="">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+      {{ form.country_code.label(class="form-label") }}
+      {{ form.country_code(class="form-control") }}
+      {% for error in form.country_code.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      {{ form.mobile_no.label(class="form-label") }}
+      {{ form.mobile_no(class="form-control") }}
+      {% for error in form.mobile_no.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <div class="mb-3">
+      {{ form.email.label(class="form-label") }}
+      {{ form.email(class="form-control") }}
+      {% for error in form.email.errors %}
+        <div class="text-danger small">{{ error }}</div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-success">Update Contact</button>
+    <a href="{{ url_for('user.display_contact_details') }}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

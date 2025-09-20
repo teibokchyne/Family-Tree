@@ -15,7 +15,7 @@ class User(db.Model, UserMixin):
     person = db.relationship('Person', backref='user', uselist=False, cascade='all, delete-orphan')
     addresses = db.relationship('Address', backref='user', lazy=True, cascade='all, delete-orphan')
     important_dates = db.relationship('ImportantDates', backref='user', lazy=True, cascade='all, delete-orphan')
-    
+    contact_details = db.relationship('ContactDetails', backref='user', lazy=True, cascade='all, delete-orphan')
     def create_password_hash(self, password):
         self.password_hash = bcrypt.generate_password_hash(password)
     
@@ -24,7 +24,7 @@ class User(db.Model, UserMixin):
 
 
 
-    # emails = db.relationship('Email', backref='person', lazy=True, cascade='all, delete-orphan')
+
     # mobile_numbers = db.relationship('MobileNumber', backref='person', lazy=True, cascade='all, delete-orphan')
     # education = db.relationship('Education', backref='person', lazy=True, cascade='all, delete-orphan')
     # records = db.relationship('Record', backref='person', lazy=True, cascade='all, delete-orphan')
@@ -72,3 +72,10 @@ class ImportantDates(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date_type = db.Column(db.Enum(ImportantDateTypeEnum), nullable=False)  # e.g., Birth, Anniversary
     date = db.Column(db.Date, nullable=False)
+
+class ContactDetails(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    country_code = db.Column(db.Integer)
+    mobile_no = db.Column(db.String)
+    email = db.Column(db.String(120))
