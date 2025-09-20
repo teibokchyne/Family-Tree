@@ -8,28 +8,40 @@ from flask import (
     request,
     current_app as app
 )
+
+from flask_login import current_user, login_required
+
 from family_tree.cursor import Cursor
+
 from family_tree.services.user import (
     update_person,
     prefill_address_form,
-    fill_address_from_form
+    fill_address_from_form,
+    get_relative_details,
+    check_relative_constraints,
+    add_relative_to_database,
+    prefill_upsert_relative_form
 )
 from family_tree.models import (
+    User,
     GenderEnum,
     Person,
     Address,
     ImportantDateTypeEnum,
     ImportantDates,
-    ContactDetails
+    ContactDetails,
+    RelativesTypeEnum,
+    Relatives
 )
 from family_tree.forms import (
     UpsertPersonForm,
     UpsertAddressForm,
     UpsertImportantDateForm,
-    UpsertContactDetailsForm
+    UpsertContactDetailsForm,
+    UpsertRelativeForm
 )
 from family_tree import db
-from flask_login import current_user, login_required
+
 
 cursor = Cursor()
 
@@ -452,3 +464,46 @@ def delete_contact_details(contact_id):
     app.logger.info(
         f"Contact details ID {contact_id} deleted for user {current_user.username}.")
     return redirect(url_for('user.display_contact_details'))
+
+@bp.route('/display_relatives')
+@login_required
+def display_relatives():
+    """
+    Render the relatives page for the user.
+    """
+    app.logger.info(
+        f"Rendering relatives page for user {current_user.username}.")
+    relatives = cursor.query(db, Relatives, filter_by=True, user_id=current_user.id).all()
+    relative_details = get_relative_details(db, User, relatives)
+    return render_template(
+        'user/display_relatives.html',
+        relative_details=relative_details
+    )
+
+@bp.route('/add_relative', methods=['GET', 'POST'])
+@login_required
+def add_relative():
+    """
+    Render the add relative page.
+    """
+    app.logger.info(
+        f"Rendering add relative page for user {current_user.username}.")
+    form = UpsertRelativeForm()
+    prefill_upsert_relative_form(db, User, current_user.id, form)
+    form.relation_type.choices = [(e.name, e.value) for e in RelativesTypeEnum]
+    if form.validate_on_submit():
+        if check_relative_constraints(db, User, Relatives, current_user, form):
+            add_relative_to_database(db, Relatives, RelativesTypeEnum, current_user, form)
+            flash('Relative added successfully!', 'success')
+            app.logger.info(
+                f"Relative added for user {current_user.username}.")
+            return redirect(url_for('user.add_relative'))
+        else:
+            flash('Invalid relative relationship.', 'danger')
+            app.logger.warning(
+                f"User {current_user.username} attempted to add invalid relative relationship.")
+            return redirect(url_for('user.display_relatives'))
+    return render_template(
+        'user/add_relative.html',
+        form=form
+    )

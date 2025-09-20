@@ -3,6 +3,15 @@
 <div class="container mt-5">
 	<h2 class="mb-4">User Dashboard</h2>
 	<div class="row">
+    <div class="col-md-6 mb-3">
+			<div class="card h-100">
+				<div class="card-body d-flex flex-column justify-content-between">
+					<h5 class="card-title">Relatives Details</h5>
+					<p class="card-text">Manage your relatives</p>
+					<a href="{{ url_for('user.display_relatives') }}" class="btn btn-primary mt-auto">Manage Relationships</a>
+				</div>
+			</div>
+		</div>
 		<div class="col-md-6 mb-3">
 			<div class="card h-100">
 				<div class="card-body d-flex flex-column justify-content-between">

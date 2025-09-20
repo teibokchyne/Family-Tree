@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Relatives{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Your Relatives</h2>
+    {% if relative_details and relative_details|length > 0 %}
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th>Relation</th>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rel in relative_details %}
+                <tr>
+                    <td>{{ rel.relationship|capitalize }}</td>
+                    <td>{{ rel.first_name }} {{ rel.last_name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info">No relatives found.</div>
+    {% endif %}
+    <a href="{{ url_for('user.add_relative') }}" class="btn btn-primary mt-3">Add Relationship</a>
+    <a href="{{ url_for('user.dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+</div>
+{% endblock %}

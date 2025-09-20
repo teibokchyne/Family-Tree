@@ -18,6 +18,8 @@ class Cursor:
 
         if filter_by:
             return db.session.query(table).filter_by(**kwargs)
+        elif args and kwargs:
+            return db.session.query(table).filter(*args).filter_by(**kwargs)
         elif args:
             return db.session.query(table).filter(*args)
         else:

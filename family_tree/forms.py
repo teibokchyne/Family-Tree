@@ -78,3 +78,8 @@ class UpsertContactDetailsForm(FlaskForm):
             self.email.errors.append('At least one contact detail (mobile number or email) must be provided.')
             return False
         return True
+    
+class UpsertRelativeForm(FlaskForm):
+    relative_user_id = SelectField('Relative', choices=[], coerce=int, validators=[DataRequired()])
+    relation_type = SelectField('Relation Type', choices=[], validators=[DataRequired()])
+    submit = SubmitField('Add Relative')
