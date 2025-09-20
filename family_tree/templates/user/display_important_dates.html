@@ -22,6 +22,7 @@
 	{% else %}
 		<div class="alert alert-info">No important dates found.</div>
 	{% endif %}
+    <a href="{{ url_for('user.add_important_date') }}" class="btn btn-primary mt-3">Add Important Date</a>
 	<a href="{{ url_for('user.dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>
 {% endblock %}

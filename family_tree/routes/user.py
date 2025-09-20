@@ -14,13 +14,16 @@ from family_tree import db
 
 from family_tree.forms import (
     UpsertPersonForm,
-    UpsertAddressForm
+    UpsertAddressForm,
+    UpsertImportantDateForm
 )
 
 from family_tree.models import (
     GenderEnum,
     Person,
-    Address
+    Address,
+    ImportantDateTypeEnum,
+    ImportantDates
 )
 
 from family_tree.services.user import (
@@ -260,4 +263,31 @@ def display_important_dates():
     return render_template(
         'user/display_important_dates.html',
         important_dates=current_user.important_dates
+    )
+
+@bp.route('/add_important_date', methods=['GET', 'POST'])
+@login_required
+def add_important_date():
+    """
+    Render the add important date page.
+    """
+    app.logger.info(
+        f"Rendering add important date page for user {current_user.username}.")
+
+    form = UpsertImportantDateForm()
+    form.date_type.choices = [(e.name, e.value) for e in ImportantDateTypeEnum]
+    if form.validate_on_submit():
+        cursor.add(
+            db,
+            ImportantDates,
+            user_id=current_user.id,
+            date_type=ImportantDateTypeEnum(form.date_type.data),
+            date=form.date.data
+        )
+        flash('Important date added successfully!', 'success')
+        app.logger.info(f"Important date added for user {current_user.username}.")
+        return redirect(url_for('user.add_important_date'))
+    return render_template(
+        'user/add_important_date.html',
+        form=form
     )

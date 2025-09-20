@@ -5,7 +5,8 @@ from wtforms import (
     SubmitField, 
     EmailField,
     BooleanField,
-    SelectField
+    SelectField,
+    DateField
     )
 from wtforms.validators import (
     DataRequired, 
@@ -44,4 +45,9 @@ class UpsertAddressForm(FlaskForm):
     state = StringField('State', default='Meghalaya', validators=[DataRequired()])
     country = StringField('Country', default='India', validators=[DataRequired()])
     landmark = StringField('Landmark')
+    submit = SubmitField('Submit')
+
+class UpsertImportantDateForm(FlaskForm):
+    date_type = SelectField('Event', choices=[], validators=[DataRequired()])
+    date = DateField('Date', validators=[DataRequired()])
     submit = SubmitField('Submit')

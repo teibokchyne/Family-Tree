@@ -41,8 +41,8 @@ def login():
     Handle user login. Renders login form and processes authentication.
     """
     if current_user.is_authenticated:
-        app.logger.info("User already authenticated, redirecting to dashboard.")
-        return redirect(url_for('common.dashboard'))
+        app.logger.info("User already authenticated, redirecting to home.")
+        return redirect(url_for('common.home'))
     else:
         form = LoginForm()
         if form.validate_on_submit():
@@ -50,7 +50,7 @@ def login():
             if user and user.check_password(form.password.data):
                 login_user(user, remember=form.remember.data)
                 app.logger.info(f"User {form.email.data} logged in successfully.")
-                return redirect(url_for('common.dashboard'))
+                return redirect(url_for('common.home'))
             else:
                 app.logger.warning(f"Failed login attempt for {form.email.data}.")
                 flash('Login Unsuccessful. Please check email and password', 'danger')
@@ -65,8 +65,8 @@ def register():
     Handle user registration. Renders registration form and creates new user.
     """
     if current_user.is_authenticated:
-        app.logger.info("User already authenticated, redirecting to dashboard.")
-        return redirect(url_for('common.dashboard'))
+        app.logger.info("User already authenticated, redirecting to home.")
+        return redirect(url_for('common.home'))
     else:
         form = RegistrationForm()
         if form.validate_on_submit():

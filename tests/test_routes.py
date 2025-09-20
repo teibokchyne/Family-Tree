@@ -81,6 +81,7 @@ class TestCommonRoutes:
 
 
 class TestUserRoutes:
+
     def test_profile_creation(self, client):
         client.post('/register', data={
             'username': 'newuser',
@@ -547,3 +548,31 @@ class TestUserRoutes:
         # Try to delete a non-existent address
         response = client.post('/delete_address/9999', follow_redirects=True)
         assert b'Address not found.' in response.data or b'No Addresses Found' in response.data
+
+    def test_add_important_date_success(self, client):
+        from family_tree.models import ImportantDates
+        import datetime
+        # Register and log in
+        client.post('/register', data={
+            'username': 'dateuser',
+            'email': 'dateuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'dateuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+
+        # Add an important date
+        response = client.post('/add_important_date', data={
+            'date_type': 'BIRTH',
+            'date': '2000-01-01',
+        }, follow_redirects=True)
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Important date added successfully!' in response.data
+
+        # Check that the date is in the database
+        user = User.query.filter_by(email='dateuser@example.com').first()
+        dates = ImportantDates.query.filter_by(user_id=user.id).all()
+        assert any(d.date_type.name == 'BIRTH' and d.date ==
+                   datetime.date(2000, 1, 1) for d in dates)
