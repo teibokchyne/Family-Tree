@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <h2 class="mb-4"> Add Address</h2>
+          <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="form-check mb-3">
+                {{ form.is_permanent(class="form-check-input") }}
+                {{ form.is_permanent.label(class="form-check-label") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.first_line.label(class="form-label") }}
+                {{ form.first_line(class="form-control", placeholder="Address Line 1") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.second_line.label(class="form-label") }}
+                {{ form.second_line(class="form-control", placeholder="Address Line 2") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.pin_code.label(class="form-label") }}
+                {{ form.pin_code(class="form-control", placeholder="Pin Code") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.state.label(class="form-label") }}
+                {{ form.state(class="form-control", placeholder="State") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.country.label(class="form-label") }}
+                {{ form.country(class="form-control", placeholder="Country") }}
+            </div>
+            <div class="form-group mb-3">
+                {{ form.landmark.label(class="form-label") }}
+                {{ form.landmark(class="form-control", placeholder="Landmark") }}
+            </div>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </div>
+          </form>
+          <hr>
+        </div>
+      </div>
+    </div>
+{% endblock %}

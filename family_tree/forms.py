@@ -7,7 +7,11 @@ from wtforms import (
     BooleanField,
     SelectField
     )
-from wtforms.validators import DataRequired, Email
+from wtforms.validators import (
+    DataRequired, 
+    Email,
+    Optional
+)
 
 class LoginForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
@@ -31,3 +35,13 @@ class UpsertPersonForm(FlaskForm):
     middle_name = StringField('Middle Name')
     last_name = StringField('Last Name', validators=[DataRequired()])
     submit = SubmitField('Add/Edit Person')
+
+class UpsertAddressForm(FlaskForm):
+    is_permanent = BooleanField('Permanent Address')
+    first_line = StringField('Address Line 1', validators=[DataRequired()])
+    second_line = StringField('Address Line 2')
+    pin_code = StringField('Pin Code', validators=[DataRequired()])
+    state = StringField('State', default='Meghalaya', validators=[DataRequired()])
+    country = StringField('Country', default='India', validators=[DataRequired()])
+    landmark = StringField('Landmark')
+    submit = SubmitField('Submit')

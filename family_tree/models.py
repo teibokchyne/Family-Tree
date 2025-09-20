@@ -18,6 +18,7 @@ class User(db.Model, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
 
     person = db.relationship('Person', backref='user', uselist=False, cascade='all, delete-orphan')
+    addresses = db.relationship('Address', backref='user', lazy=True, cascade='all, delete-orphan')
 
     def create_password_hash(self, password):
         self.password_hash = bcrypt.generate_password_hash(password)
@@ -29,7 +30,7 @@ class User(db.Model, UserMixin):
 class Person(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    gender = db.Column(db.Enum(GenderEnum, name="gender_enum"), nullable=False)
+    gender = db.Column(db.Enum(GenderEnum), nullable=False)
     first_name = db.Column(db.String(100), nullable=False)
     middle_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100), nullable=False)
@@ -47,3 +48,17 @@ class Person(db.Model):
     def __repr__(self):
         return f'<Person {self.first_name} {self.last_name}>'
 
+class Address(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_permanent = db.Column(db.Boolean, nullable=False)
+    first_line = db.Column(db.String(255), nullable=False)
+    second_line = db.Column(db.String(255))
+    pin_code = db.Column(db.Integer, nullable=False)
+    state = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+    landmark = db.Column(db.String(255))
+
+    def __repr__(self):
+        return f'<Address {self.first_line}, {self.state}, {self.country}>'
+    

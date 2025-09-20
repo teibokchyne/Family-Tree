@@ -13,12 +13,14 @@ from flask_login import current_user, login_required
 from family_tree import db
 
 from family_tree.forms import (
-    UpsertPersonForm
+    UpsertPersonForm,
+    UpsertAddressForm
 )
 
 from family_tree.models import (
     GenderEnum,
-    Person
+    Person,
+    Address
 )
 
 from family_tree.services.user import (
@@ -77,3 +79,55 @@ def profile():
         'user/profile.html', 
         user=current_user,
         form=form)
+
+@bp.route('/address', methods=['GET', 'POST'])
+@login_required
+def address():
+    """
+    Render and process the user's address form.
+    """
+    app.logger.info(f"Rendering address page for user {current_user.username}.")
+
+    return render_template(
+        'user/address.html', 
+        addresses = current_user.addresses
+        )
+
+@bp.route('/add_address', methods=['GET', 'POST'])
+@login_required
+def add_address():
+    """
+    Render the add address page if user has less than two addresses.
+    """
+    app.logger.info(f"Rendering add address page for user {current_user.username}.")
+    if current_user.addresses and len(current_user.addresses) >= 2:
+        app.logger.info(f"User {current_user.username} already has two addresses.")
+        flash('You have already added both permanent and current addresses.', 'info')
+        return redirect(url_for('user.address'))
+    form = UpsertAddressForm()
+    if form.validate_on_submit():
+        is_permanent = form.is_permanent.data
+        if current_user.addresses:
+            if any(addr.is_permanent == is_permanent for addr in current_user.addresses):
+                app.logger.info(f"User {current_user.username} attempted to add duplicate address type.")
+                flash('You have already added this type of address.', 'warning')
+                return redirect(url_for('user.address'))
+        cursor.add(
+            db,
+            Address,
+            user_id=current_user.id,
+            is_permanent=is_permanent,
+            first_line=form.first_line.data,
+            second_line=form.second_line.data,
+            pin_code=form.pin_code.data,
+            state=form.state.data,
+            country=form.country.data,
+            landmark=form.landmark.data
+        )
+        flash('Address added successfully!', 'success')
+        app.logger.info(f"Address added for user {current_user.username}.")
+        return redirect(url_for('user.address'))
+    return render_template(
+        'user/add_address.html', 
+        form=form
+        )
