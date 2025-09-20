@@ -20,3 +20,63 @@ class TestCommonUI:
         response = client.get('/dashboard', follow_redirects=True)
         # Should redirect to login or home if not authenticated
         assert b'Login' in response.data or b'login' in response.data or b'Home' in response.data
+
+
+class TestUserUI:
+    def test_address_page_renders(self, client):
+        client.post('/register', data={
+            'username': 'uiuser',
+            'email': 'uiuser@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'uiuser@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+        response = client.get('/address')
+        assert response.status_code == 200
+        assert (b'Your Addresses' in response.data
+                or b'You have not added any addresses yet.' in response.data)
+
+    def test_add_address_page_renders(self, client):
+        client.post('/register', data={
+            'username': 'uiuser2',
+            'email': 'uiuser2@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'uiuser2@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+        response = client.get('/add_address')
+        assert response.status_code == 200
+        assert b'Address Line 1' in response.data
+        assert b'Country' in response.data
+
+    def test_edit_address_page_renders(self, client):
+        client.post('/register', data={
+            'username': 'uiuser3',
+            'email': 'uiuser3@example.com',
+            'password': 'pass'
+        })
+        client.post('/login', data={
+            'email': 'uiuser3@example.com',
+            'password': 'pass',
+        }, follow_redirects=True)
+        # Add address
+        client.post('/add_address', data={
+            'is_permanent': 'y',
+            'first_line': 'Line',
+            'second_line': '',
+            'pin_code': '12345',
+            'state': 'State',
+            'country': 'Country',
+            'landmark': ''
+        }, follow_redirects=True)
+        from family_tree.models import User
+        user = User.query.filter_by(email='uiuser3@example.com').first()
+        address_id = user.addresses[0].id
+        response = client.get(f'/edit_address/{address_id}')
+        assert response.status_code == 200
+        assert b'Edit Address' in response.data
+        assert b'Address Line 1' in response.data
