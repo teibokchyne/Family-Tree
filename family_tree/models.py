@@ -4,11 +4,6 @@ import enum
 from flask_login import UserMixin
 
 from family_tree import db, bcrypt
-    
-class GenderEnum(enum.Enum):
-    MALE = "MALE"
-    FEMALE = "FEMALE"
-    OTHER = "OTHER"
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -19,12 +14,27 @@ class User(db.Model, UserMixin):
 
     person = db.relationship('Person', backref='user', uselist=False, cascade='all, delete-orphan')
     addresses = db.relationship('Address', backref='user', lazy=True, cascade='all, delete-orphan')
-
+    important_dates = db.relationship('ImportantDates', backref='user', lazy=True, cascade='all, delete-orphan')
+    
     def create_password_hash(self, password):
         self.password_hash = bcrypt.generate_password_hash(password)
     
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+
+
+
+    # emails = db.relationship('Email', backref='person', lazy=True, cascade='all, delete-orphan')
+    # mobile_numbers = db.relationship('MobileNumber', backref='person', lazy=True, cascade='all, delete-orphan')
+    # education = db.relationship('Education', backref='person', lazy=True, cascade='all, delete-orphan')
+    # records = db.relationship('Record', backref='person', lazy=True, cascade='all, delete-orphan')
+    # additional_info = db.relationship('AdditionalInfo', backref='person', lazy=True, cascade='all, delete-orphan', uselist=False)
+    # photos = db.relationship('Photos', backref='person', lazy=True, cascade='all, delete-orphan')
+
+class GenderEnum(enum.Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
 
 # Main Person entity
 class Person(db.Model):
@@ -35,16 +45,6 @@ class Person(db.Model):
     middle_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100), nullable=False)
     
-    # Relationships
-    # addresses = db.relationship('Address', backref='person', lazy=True, cascade='all, delete-orphan')
-    # important_dates = db.relationship('ImportantDates', backref='person', lazy=True, cascade='all, delete-orphan')
-    # emails = db.relationship('Email', backref='person', lazy=True, cascade='all, delete-orphan')
-    # mobile_numbers = db.relationship('MobileNumber', backref='person', lazy=True, cascade='all, delete-orphan')
-    # education = db.relationship('Education', backref='person', lazy=True, cascade='all, delete-orphan')
-    # records = db.relationship('Record', backref='person', lazy=True, cascade='all, delete-orphan')
-    # additional_info = db.relationship('AdditionalInfo', backref='person', lazy=True, cascade='all, delete-orphan', uselist=False)
-    # photos = db.relationship('Photos', backref='person', lazy=True, cascade='all, delete-orphan')
-
     def __repr__(self):
         return f'<Person {self.first_name} {self.last_name}>'
 
@@ -61,4 +61,14 @@ class Address(db.Model):
 
     def __repr__(self):
         return f'<Address {self.first_line}, {self.state}, {self.country}>'
-    
+
+class ImportantDateTypeEnum(enum.Enum):
+    BIRTH = "BIRTH"
+    DEATH = "DEATH"
+    MARRIAGE = "MARRIAGE"
+
+class ImportantDates(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date_type = db.Column(db.Enum(ImportantDateTypeEnum), nullable=False)  # e.g., Birth, Anniversary
+    date = db.Column(db.Date, nullable=False)

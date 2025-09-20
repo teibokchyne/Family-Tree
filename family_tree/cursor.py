@@ -1,3 +1,5 @@
+from flask import current_app as app
+
 class Cursor:
     def query(self, db, table, *args, filter_by=False, **kwargs):
         """
@@ -65,7 +67,7 @@ class Cursor:
         """
         records = db.session.query(table).filter_by(**kwargs).all()
         if not records:
-            raise ValueError(f"Record not found in {table.__tablename__}")
+            app.logger.warning(f"No records found in {table.__tablename__} matching {kwargs}")
         for record in records:
             db.session.delete(record)
         db.session.commit()

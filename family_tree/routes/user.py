@@ -44,6 +44,14 @@ def restrict_access_to_user():
     else:
         app.logger.info(f"User {current_user.username} accessed user routes.")
 
+@bp.route('/dashboard')
+@login_required 
+def dashboard():
+    """
+    Render the user dashboard page.
+    """
+    app.logger.info(f"Rendering dashboard for user {current_user.get_id()}.")
+    return render_template('user/dashboard.html')
 
 @bp.route('/profile', methods=['GET', 'POST'])
 @login_required
@@ -239,3 +247,17 @@ def delete_address(address_id):
             f"Address ID {address_id} deleted for user {current_user.username}.")
 
     return redirect(url_for('user.address'))
+
+@bp.route('/display_important_dates')
+@login_required
+def display_important_dates():
+    """
+    Render the important dates page for the user.
+    """
+    app.logger.info(
+        f"Rendering important dates page for user {current_user.username}.")
+
+    return render_template(
+        'user/display_important_dates.html',
+        important_dates=current_user.important_dates
+    )

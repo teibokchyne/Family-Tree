@@ -103,12 +103,3 @@ def logout():
     app.logger.info(f"User {current_user.get_id()} logged out.")
     logout_user()
     return redirect(url_for('common.home'))
-
-@bp.route('/dashboard')
-@login_required 
-def dashboard():
-    """
-    Render the user dashboard page.
-    """
-    app.logger.info(f"Rendering dashboard for user {current_user.get_id()}.")
-    return render_template('common/dashboard.html')
