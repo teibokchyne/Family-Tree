@@ -12,8 +12,12 @@
                 {{ address.first_line }}<br>
                 {% if address.second_line %}{{ address.second_line }}<br>{% endif %}
                 {{ address.landmark }}<br>
-                {{ address.state }}, {{ address.country }} - {{ address.pin_code }} <br>
-                <a href="{{ url_for('user.edit_address', address_id=address.id) }}">Edit</a>
+                {{ address.state }}, {{ address.country }} - {{ address.pin_code }} <br><br>
+                <div class="d-flex gap-2">
+                  <a href="{{ url_for('user.edit_address', address_id=address.id) }}" class="btn btn-primary">Edit</a>
+                  <a href="{{ url_for('user.display_address', address_id=address.id ) }}" class="btn btn-danger">Delete</a>
+                </div>
+                
               </li>
             {% endfor %}
           </ul>

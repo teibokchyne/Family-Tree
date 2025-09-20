@@ -195,3 +195,47 @@ def edit_address(address_id):
         form=form,
         address=address
     )
+
+@bp.route('/display_address/<int:address_id>')
+@login_required
+def display_address(address_id):
+    """
+    Render the display address page for a specific address.
+    """
+    app.logger.info(
+        f"Rendering display address page for user {current_user.username}, address ID {address_id}.")
+    address = cursor.query(db, Address, filter_by=True,
+                           id=address_id, user_id=current_user.id).first()
+    if not address:
+        app.logger.warning(
+            f"Address ID {address_id} not found for user {current_user.username}.")
+        flash('Address not found.', 'danger')
+        return redirect(url_for('user.address'))
+
+    return render_template(
+        'user/display_address.html',
+        address=address
+    )
+
+@bp.route('/delete_address/<int:address_id>', methods=['POST'])
+@login_required
+def delete_address(address_id):
+    """
+    Render the delete address confirmation page and handle deletion.
+    """
+    app.logger.info(
+        f"Rendering delete address page for user {current_user.username}, address ID {address_id}.")
+    address = cursor.query(db, Address, filter_by=True,
+                           id=address_id, user_id=current_user.id).first()
+    if not address:
+        app.logger.warning(
+            f"Address ID {address_id} not found for user {current_user.username}.")
+        flash('Address not found.', 'danger')
+
+    if request.method == 'POST':
+        cursor.delete(db, Address, id=address_id, user_id=current_user.id)
+        flash('Address deleted successfully!', 'success')
+        app.logger.info(
+            f"Address ID {address_id} deleted for user {current_user.username}.")
+
+    return redirect(url_for('user.address'))

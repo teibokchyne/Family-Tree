@@ -47,9 +47,25 @@ class Cursor:
             record_id: The primary key of the record to update
             **kwargs: Field values to update (passed to model instance)
         """
-        record = db.session.query(table).get(record_id)
+        record = db.session.query(table).filter_by(id=record_id).first()
         if not record:
             raise ValueError(f"Record with id {record_id} not found in {table.__tablename__}")
         for key, value in kwargs.items():
             setattr(record, key, value)
+        db.session.commit()
+
+    def delete(self, db, table, **kwargs):
+        """
+        Delete a record from a SQLAlchemy table.
+
+        Parameters:
+            db: The SQLAlchemy instance (usually `from yourapp import db`)
+            table: The SQLAlchemy model class (e.g. User, Order)
+            record_id: The primary key of the record to delete
+        """
+        records = db.session.query(table).filter_by(**kwargs).all()
+        if not records:
+            raise ValueError(f"Record not found in {table.__tablename__}")
+        for record in records:
+            db.session.delete(record)
         db.session.commit()
