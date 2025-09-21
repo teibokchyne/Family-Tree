@@ -1,11 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
-  {% if user %}
-    Are you sure you want to delete?
-    {{ user.username }}
-    {{ user.person.first_name }} {{user.person.last_name}}
-    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id)}}">
-      <input type="submit" value="Delete">
-    </form>
-  {% endif %}
+  <div class="container my-4">
+    {% if user %}
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Confirm Deletion</h5>
+          <p class="card-text">Are you sure you want to delete the following user?</p>
+          <p><strong>Username:</strong> {{ user.username }}</p>
+          <p><strong>Name:</strong> {{ user.person.first_name + (' ' + user.person.middle_name if user.person.middle_name else '') + ' '+ user.person.last_name }}</p>
+          
+          <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}">
+            <button type="submit" class="btn btn-danger">Delete</button>
+            <a href="{{ url_for('admin.display_users') }}" class="btn btn-secondary ms-2">Cancel</a>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <p class="text-muted">User not found.</p>
+    {% endif %}
+  </div>
 {% endblock %}
