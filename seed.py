@@ -15,7 +15,6 @@ from family_tree.models import (
 )
 
 
-
 def seed_database():
     app = create_app()
     with app.app_context():
@@ -27,22 +26,36 @@ def seed_database():
             User(
                 username="alice",
                 email="alice@example.com",
-                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                password_hash=bcrypt.generate_password_hash(
+                    "password123").decode('utf-8'),
                 is_admin=True
             ),
             User(
                 username="bob",
                 email="bob@example.com",
-                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                password_hash=bcrypt.generate_password_hash(
+                    "password123").decode('utf-8'),
                 is_admin=False
             ),
             User(
                 username="charlie",
                 email="charlie@example.com",
-                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                password_hash=bcrypt.generate_password_hash(
+                    "password123").decode('utf-8'),
                 is_admin=False
             )
         ]
+
+        for i in range(4, 24):  # Starts from user4 to user23
+            users.append(
+                User(
+                    username=f"user{i}",
+                    email=f"user{i}@example.com",
+                    password_hash=bcrypt.generate_password_hash(
+                        "password123").decode('utf-8'),
+                    is_admin=False
+                )
+            )
 
         db.session.bulk_save_objects(users)
         db.session.commit()
@@ -76,6 +89,17 @@ def seed_database():
                 last_name="Campbell"
             )
         ]
+
+        for i in range(4, 24):
+            persons.append(
+                Person(
+                    user_id=i,
+                    gender=GenderEnum.MALE if i % 3 == 0 else GenderEnum.FEMALE if i % 3 == 1 else GenderEnum.OTHER,
+                    first_name=f'person_user_no_{i}',
+                    middle_name=None,
+                    last_name="Random"
+                )
+            )
 
         db.session.bulk_save_objects(persons)
         db.session.commit()
@@ -114,6 +138,20 @@ def seed_database():
             )
         ]
 
+        for i in range(4, 24):
+            addresses.append(
+                Address(
+                    user_id=i,
+                    is_permanent=True if i % 2 == 1 else False,
+                    first_line=f"address_{i}_789 Pine Road",
+                    second_line=f"address_{i}_Suite 202",
+                    pin_code=400001,
+                    state="Maharashtra",
+                    country="India",
+                    landmark="Next to Skyline Towers"
+                )
+            )
+
         db.session.bulk_save_objects(addresses)
         db.session.commit()
 
@@ -136,10 +174,19 @@ def seed_database():
             ),
             ImportantDates(
                 user_id=charlie.id,
-                date_type=ImportantDateTypeEnum.MARRIAGE,
+                date_type=ImportantDateTypeEnum.BIRTH,
                 date=date(2020, 2, 29)
             )
         ]
+
+        for i in range(4, 24):
+            important_dates.append(
+                ImportantDates(
+                    user_id=i,
+                    date_type=ImportantDateTypeEnum.BIRTH,
+                    date=date(2000, 2, 29)
+                )
+            )
 
         # Insert into DB
         db.session.bulk_save_objects(important_dates)
@@ -174,45 +221,193 @@ def seed_database():
         # Create relationships and reverse relationships
         relationships = []
 
-        # Alice <-> Bob (SIBLING)
+        # 1 <-> 2: SIBLING
         relationships.append(Relatives(
-            user_id=alice.id,
-            relative_user_id=bob.id,
+            user_id=1,
+            relative_user_id=2,
             relation_type=RelativesTypeEnum.SIBLING
         ))
         relationships.append(Relatives(
-            user_id=bob.id,
-            relative_user_id=alice.id,
+            user_id=2,
+            relative_user_id=1,
             relation_type=RelativesTypeEnum.SIBLING
         ))
 
-        # Alice <-> Charlie (PARENT <-> CHILD)
+        # 3 -> 4: PARENT, 4 -> 3: CHILD
         relationships.append(Relatives(
-            user_id=alice.id,
-            relative_user_id=charlie.id,
+            user_id=3,
+            relative_user_id=4,
             relation_type=RelativesTypeEnum.PARENT
         ))
         relationships.append(Relatives(
-            user_id=charlie.id,
-            relative_user_id=alice.id,
+            user_id=4,
+            relative_user_id=3,
             relation_type=RelativesTypeEnum.CHILD
         ))
 
-        # Bob <-> Charlie (SPOUSE <-> SPOUSE)
+        # 5 -> 6: STEPPARENT, 6 -> 5: STEPCHILD
         relationships.append(Relatives(
-            user_id=bob.id,
-            relative_user_id=charlie.id,
-            relation_type=RelativesTypeEnum.SPOUSE
+            user_id=5,
+            relative_user_id=6,
+            relation_type=RelativesTypeEnum.STEPPARENT
         ))
         relationships.append(Relatives(
-            user_id=charlie.id,
-            relative_user_id=bob.id,
-            relation_type=RelativesTypeEnum.SPOUSE
+            user_id=6,
+            relative_user_id=5,
+            relation_type=RelativesTypeEnum.STEPCHILD
+        ))
+
+        # 7 <-> 8: HALFSIBLING
+        relationships.append(Relatives(
+            user_id=7,
+            relative_user_id=8,
+            relation_type=RelativesTypeEnum.HALFSIBLING
+        ))
+        relationships.append(Relatives(
+            user_id=8,
+            relative_user_id=7,
+            relation_type=RelativesTypeEnum.HALFSIBLING
+        ))
+
+        # 9 <-> 10: STEPSIBLING
+        relationships.append(Relatives(
+            user_id=9,
+            relative_user_id=10,
+            relation_type=RelativesTypeEnum.STEPSIBLING
+        ))
+        relationships.append(Relatives(
+            user_id=10,
+            relative_user_id=9,
+            relation_type=RelativesTypeEnum.STEPSIBLING
+        ))
+
+        # 11 <-> 12: EXSPOUSE (bidirectional)
+        relationships.append(Relatives(
+            user_id=11,
+            relative_user_id=12,
+            relation_type=RelativesTypeEnum.EXSPOUSE
+        ))
+        relationships.append(Relatives(
+            user_id=12,
+            relative_user_id=11,
+            relation_type=RelativesTypeEnum.EXSPOUSE
+        ))
+
+        # 13 <-> 14: UNKNOWN
+        relationships.append(Relatives(
+            user_id=13,
+            relative_user_id=14,
+            relation_type=RelativesTypeEnum.UNKNOWN
+        ))
+        relationships.append(Relatives(
+            user_id=14,
+            relative_user_id=13,
+            relation_type=RelativesTypeEnum.UNKNOWN
+        ))
+
+        # For the rest, create some mixed parent-child relationships for demo
+
+        for i in range(15, 23, 2):
+            # i -> i+1: PARENT, i+1 -> i: CHILD
+            relationships.append(Relatives(
+                user_id=i,
+                relative_user_id=i+1,
+                relation_type=RelativesTypeEnum.PARENT
+            ))
+            relationships.append(Relatives(
+                user_id=i+1,
+                relative_user_id=i,
+                relation_type=RelativesTypeEnum.CHILD
+            ))
+        
+        # User 3 -> User 5 (PARENT), User 5 -> User 3 (CHILD)
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=5,
+            relation_type=RelativesTypeEnum.PARENT
+        ))
+        relationships.append(Relatives(
+            user_id=5,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.CHILD
+        ))
+
+        # User 3 -> User 6 (STEPPARENT), User 6 -> User 3 (STEPCHILD)
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=6,
+            relation_type=RelativesTypeEnum.STEPPARENT
+        ))
+        relationships.append(Relatives(
+            user_id=6,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.STEPCHILD
+        ))
+
+        # User 3 -> User 7 (UNKNOWN), User 7 -> User 3 (UNKNOWN)
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=7,
+            relation_type=RelativesTypeEnum.UNKNOWN
+        ))
+        relationships.append(Relatives(
+            user_id=7,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.UNKNOWN
+        ))
+
+        # User 8 -> User 3 (CHILD -> PARENT)
+        relationships.append(Relatives(
+            user_id=8,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.PARENT
+        ))
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=8,
+            relation_type=RelativesTypeEnum.CHILD
+        ))
+
+        # User 9 -> User 3 (STEPCHILD -> STEPPARENT)
+        relationships.append(Relatives(
+            user_id=9,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.STEPPARENT
+        ))
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=9,
+            relation_type=RelativesTypeEnum.STEPCHILD
+        ))
+
+        # User 10 -> User 3 (CHILD -> PARENT)
+        relationships.append(Relatives(
+            user_id=10,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.PARENT
+        ))
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=10,
+            relation_type=RelativesTypeEnum.CHILD
+        ))
+
+        # User 11 -> User 3 (UNKNOWN)
+        relationships.append(Relatives(
+            user_id=11,
+            relative_user_id=3,
+            relation_type=RelativesTypeEnum.UNKNOWN
+        ))
+        relationships.append(Relatives(
+            user_id=3,
+            relative_user_id=11,
+            relation_type=RelativesTypeEnum.UNKNOWN
         ))
 
         # Commit to DB
         db.session.bulk_save_objects(relationships)
         db.session.commit()
-    print("SEEDING SUCCESSFULL!")
+        print("SEEDING SUCCESSFULL!")
+
 
 seed_database()

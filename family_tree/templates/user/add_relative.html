@@ -13,7 +13,7 @@
             {% endfor %}
         </div>
         <div class="mb-3">
-            <label for="relation_type" class="form-label">Relationship Type</label>
+            <label for="relation_type" class="form-label">This person is my </label>
             {{ form.relation_type(class="form-select") }}
             {% for error in form.relation_type.errors %}
                 <div class="text-danger small">{{ error }}</div>

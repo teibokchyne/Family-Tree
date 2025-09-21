@@ -14,6 +14,7 @@ from family_tree.forms import (
 
 from family_tree.services.user import (
     check_relative_constraints,
+    check_validity_relation,
     add_relative_to_database,
     delete_relative_from_database
 )
@@ -279,3 +280,36 @@ class TestUserService:
         # Make sure that both relations were deleted
         assert len(relations) == 0
 
+    def test_check_validity_relation(self, db):
+        # check_validity_relation(db, user_table, relatives_table, user, relative_user_id, relation_type)
+        self.create_users()
+        self.create_persons()
+
+        # TEST 1: IF NO PARENTS EXIST
+        charlie = User.query.filter_by(id=3).first()
+        result = check_validity_relation(db, User, Relatives, charlie, 2, 'PARENT')
+        assert result == True
+
+        # TEST 2: IF A PARENT OF THE SAME GENDER ALREADY EXISTS
+        # If a father already exists
+        db.session.add(Relatives(user_id=3, relative_user_id=2, relation_type='PARENT'))
+        result = check_validity_relation(db, User, Relatives, charlie, 2, 'PARENT')
+        assert result == False
+
+        # If a mother already exists
+        db.session.add(Relatives(user_id=3, relative_user_id=1, relation_type='PARENT'))
+        result = check_validity_relation(db, User, Relatives, charlie, 1, 'PARENT')
+        assert result == False
+
+        # TEST 3: IF TWO PARENTS ALREADY EXIST
+        db.session.add(User(id=4,username='dick',email='dick@example.com',password_hash='password123'))
+        db.session.add(Person(user_id=4, first_name='Dick', last_name="Oswald", gender = GenderEnum.MALE))
+        db.session.commit()
+        result = check_validity_relation(db, User, Relatives, charlie, 4, 'PARENT')
+        assert result == False
+
+        # TEST 4: IF A SPOUSE ALREADY EXISTS
+        db.session.add(Relatives(user_id=3, relative_user_id=4, relation_type='SPOUSE'))
+        db.session.commit()
+        result = check_validity_relation(db, User, Relatives, charlie, 4, 'SPOUSE')
+        assert result == False

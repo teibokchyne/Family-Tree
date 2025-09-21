@@ -7,6 +7,7 @@ from family_tree.cursor import Cursor
 
 cursor = Cursor()
 
+
 def update_person(db, user, form):
     if form.first_name.data is not None:
         user.person.first_name = form.first_name.data
@@ -55,13 +56,23 @@ def get_relative_details(db, table, relatives):
             })
     return relative_details
 
+
 def prefill_upsert_relative_form(db, user_table, user_id, form):
     all_users = cursor.query(db, user_table, filter_by=False).all()
     form.relative_user_id.choices = [
         (u.id, f'{u.person.first_name} {u.person.last_name}')
-        for u in all_users 
-        if u.id != user_id and u.person is not None 
-        ]
+        for u in all_users
+        if u.id != user_id and u.person is not None
+    ]
+    form.relation_type.choices = [
+        ('PARENT', 'PARENT'),
+        ('STEPPARENT', 'STEPPARENT'),
+        ('CHILD', 'CHILD'),
+        ('STEPCHILD', 'STEPCHILD'),
+        ('SPOUSE', 'SPOUSE'),
+        ('EXSPOUSE', 'EXSPOUSE')
+    ]
+
 
 def check_relative_constraints(db, user_table, relatives_table, user, form):
     # Check if the relative exists
@@ -86,7 +97,8 @@ def check_relative_constraints(db, user_table, relatives_table, user, form):
         user_id=user.id,
         relative_user_id=int(form.relative_user_id.data)).first()
     if existing_relation:
-        app.logger.warning("User attempted to add more than one relationship to a relative.")
+        app.logger.warning(
+            "User attempted to add more than one relationship to a relative.")
         flash("This relationship already exists.", "danger")
         return False
 
@@ -99,6 +111,71 @@ def check_relative_constraints(db, user_table, relatives_table, user, form):
         return False
 
     return True
+
+
+def check_validity_relation(db, user_table, relatives_table, user, relative_user_id, relation_type):
+    """
+        This function assumes that 
+        1. both user and relative exist 
+        2. both user and relative profiles are created
+        3. no previous relationship exists between user and relative
+        4. user and relative are different
+
+        Returns:
+            Bool
+    """
+    relative = cursor.query(db, user_table, filter_by=True,
+                            id=relative_user_id).first()
+    if not relative:
+        app.logger.warning(
+            f'relative user id {relative_user_id} does not exist')
+        return False
+
+    # Checks for relation_type PARENT
+    if relation_type == 'PARENT':
+        parents = cursor.query(db, relatives_table, filter_by=True,
+                               user_id=user.id, relation_type='PARENT').all()
+        # Check if there are currently no parents
+        if not parents:
+            app.logger.info(f'user {user.id} has no parents currently added')
+            return True
+        # Check if there already exists two parents
+        if len(parents) >= 2:
+            app.logger.warning(f'user {user.id} already has two parents')
+            flash('User already has two parents', 'danger')
+            return False
+
+        # Check if father already exists
+        parent = cursor.query(db, user_table, filter_by=True,
+                              id=parents[0].relative_user_id).first().person
+        if parent.gender.value == 'MALE' and relative.person.gender.value == 'MALE':
+            app.logger.warning(
+                f'user {user.id} tried to add a father when one already exists')
+            flash(
+                'Cannot add parent as parent of the same gender already exists', 'danger')
+            return False
+
+        # Check if mother already exists
+        if parent.gender.value == 'FEMALE' and relative.person.gender.value == 'FEMALE':
+            app.logger.warning(
+                f'user {user.id} tried to add a father when one already exists')
+            flash(
+                'Cannot add parent as parent of the same gender already exists', 'danger')
+            return False
+
+    # Check for relation_type 'SPOUSE'
+    elif relation_type == 'SPOUSE':
+        spouse = cursor.query(
+            db, relatives_table, filter_by=True, user_id=user.id, relation_type='SPOUSE').first()
+        if not spouse:
+            app.logger.info(f'No spouse found for user {user.id}')
+            return True
+        else:
+            app.logger.info(f'user {user.id} already has a spouse')
+            flash('Cannot add more than one spouse', 'danger')
+            return False
+    return True
+
 
 def add_relative_to_database(db, relative_table, relative_enum, user, form):
     cursor.add(
@@ -114,27 +191,36 @@ def add_relative_to_database(db, relative_table, relative_enum, user, form):
         user_id=int(form.relative_user_id.data),
         relative_user_id=user.id,
         relation_type=relative_enum(
-           relative_table.get_reverse_relation(form.relation_type.data)
-           )
+            relative_table.get_reverse_relation(form.relation_type.data)
+        )
     )
     app.logger.info(f"Relative added for user {user.username}.")
 
 
 def delete_relative_from_database(db, user_table, relatives_table, user, relative_user_id):
-    app.logger.info(f'Attempt to delete relative {relative_user_id} of user {user.id}')
-    relation = cursor.query(db, relatives_table, filter_by=True, user_id=user.id, relative_user_id=relative_user_id).first()
+    app.logger.info(
+        f'Attempt to delete relative {relative_user_id} of user {user.id}')
+    relation = cursor.query(db, relatives_table, filter_by=True,
+                            user_id=user.id, relative_user_id=relative_user_id).first()
     if not relation:
-        app.logger.info(f'Could not find relative of user {user.id} with relative user id {relative_user_id}')
-        flash(f'Could not find relation with relative user id {relative_user_id}')
-        return False 
+        app.logger.info(
+            f'Could not find relative of user {user.id} with relative user id {relative_user_id}')
+        flash(
+            f'Could not find relation with relative user id {relative_user_id}')
+        return False
     else:
-        reverse_relation = cursor.query(db, relatives_table, filter_by=True, user_id=relative_user_id, relative_user_id=user.id).first()
+        reverse_relation = cursor.query(
+            db, relatives_table, filter_by=True, user_id=relative_user_id, relative_user_id=user.id).first()
         if not reverse_relation:
-            app.logger.info(f'Could not find reverse relation from relative {relative_user_id} to user {user.id}')
+            app.logger.info(
+                f'Could not find reverse relation from relative {relative_user_id} to user {user.id}')
         else:
-            cursor.delete(db, relatives_table, user_id=relative_user_id, relative_user_id=user.id)
-            app.logger.info(f'Successfully deleled reverse relation from relative {relative_user_id} to user {user.id}')
-        cursor.delete(db, relatives_table, user_id=user.id, relative_user_id=relative_user_id)
-        app.logger.info(f'Successfully deleled relation from user {user.id} to relative {relative_user_id}')
+            cursor.delete(db, relatives_table,
+                          user_id=relative_user_id, relative_user_id=user.id)
+            app.logger.info(
+                f'Successfully deleled reverse relation from relative {relative_user_id} to user {user.id}')
+        cursor.delete(db, relatives_table, user_id=user.id,
+                      relative_user_id=relative_user_id)
+        app.logger.info(
+            f'Successfully deleled relation from user {user.id} to relative {relative_user_id}')
         return True
-            

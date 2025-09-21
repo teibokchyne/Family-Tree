@@ -19,6 +19,7 @@ from family_tree.services.user import (
     fill_address_from_form,
     get_relative_details,
     check_relative_constraints,
+    check_validity_relation,
     add_relative_to_database,
     prefill_upsert_relative_form,
     delete_relative_from_database
@@ -370,6 +371,7 @@ def delete_important_date(date_id):
         f"Important date ID {date_id} deleted for user {current_user.username}.")
     return redirect(url_for('user.display_important_dates'))
 
+
 @bp.route('/display_contact_details')
 @login_required
 def display_contact_details():
@@ -383,6 +385,7 @@ def display_contact_details():
         'user/display_contact_details.html',
         contact_details=current_user.contact_details
     )
+
 
 @bp.route('/add_contact_details', methods=['GET', 'POST'])
 @login_required
@@ -409,6 +412,8 @@ def add_contact_details():
     return render_template('user/add_contact_details.html', form=form)
 
 # Edit Contact Details
+
+
 @bp.route('/edit_contact_details/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def edit_contact_details(contact_id):
@@ -444,6 +449,8 @@ def edit_contact_details(contact_id):
     return render_template('user/edit_contact_details.html', form=form, contact=contact)
 
 # Delete Contact Details
+
+
 @bp.route('/delete_contact_details/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact_details(contact_id):
@@ -466,6 +473,7 @@ def delete_contact_details(contact_id):
         f"Contact details ID {contact_id} deleted for user {current_user.username}.")
     return redirect(url_for('user.display_contact_details'))
 
+
 @bp.route('/display_relatives')
 @login_required
 def display_relatives():
@@ -474,12 +482,14 @@ def display_relatives():
     """
     app.logger.info(
         f"Rendering relatives page for user {current_user.username}.")
-    relatives = cursor.query(db, Relatives, filter_by=True, user_id=current_user.id).all()
+    relatives = cursor.query(
+        db, Relatives, filter_by=True, user_id=current_user.id).all()
     relative_details = get_relative_details(db, User, relatives)
     return render_template(
         'user/display_relatives.html',
         relative_details=relative_details
     )
+
 
 @bp.route('/add_relative', methods=['GET', 'POST'])
 @login_required
@@ -491,10 +501,12 @@ def add_relative():
         f"Rendering add relative page for user {current_user.username}.")
     form = UpsertRelativeForm()
     prefill_upsert_relative_form(db, User, current_user.id, form)
-    form.relation_type.choices = [(e.name, e.value) for e in RelativesTypeEnum]
     if form.validate_on_submit():
-        if check_relative_constraints(db, User, Relatives, current_user, form):
-            add_relative_to_database(db, Relatives, RelativesTypeEnum, current_user, form)
+        if (check_relative_constraints(db, User, Relatives, current_user, form)
+                and check_validity_relation(db, User, Relatives, current_user,
+                                            form.relative_user_id.data, form.relation_type.data)):
+            add_relative_to_database(
+                db, Relatives, RelativesTypeEnum, current_user, form)
             flash('Relative added successfully!', 'success')
             app.logger.info(
                 f"Relative added for user {current_user.username}.")
@@ -509,14 +521,19 @@ def add_relative():
         form=form
     )
 
-@bp.route('/delete_relative/<int:relative_user_id>', methods = ['POST'])
+
+@bp.route('/delete_relative/<int:relative_user_id>', methods=['POST'])
 @login_required
 def delete_relative(relative_user_id):
-    app.logger.info(f'Delete relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
-    result = delete_relative_from_database(db, User, Relatives, current_user, relative_user_id)
+    app.logger.info(
+        f'Delete relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+    result = delete_relative_from_database(
+        db, User, Relatives, current_user, relative_user_id)
     if result:
-        app.logger.info(f'Deleted successfully relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+        app.logger.info(
+            f'Deleted successfully relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
         flash('Deleted relative relation successfully!', 'success')
     else:
-        app.logger.info(f'Delete unsuccessfull: relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+        app.logger.info(
+            f'Delete unsuccessfull: relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
     return redirect(url_for('user.display_relatives'))
