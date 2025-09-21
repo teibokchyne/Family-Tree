@@ -14,7 +14,8 @@ from family_tree.forms import (
 
 from family_tree.services.user import (
     check_relative_constraints,
-    add_relative_to_database
+    add_relative_to_database,
+    delete_relative_from_database
 )
 
 class TestUserService:
@@ -255,3 +256,26 @@ class TestUserService:
         assert rel_count == 2
         assert rel1.relation_type.value == 'PARENT'
         assert rel2.relation_type.value == 'CHILD'
+
+    def test_delete_relative_from_database(self, db):
+        self.create_users()
+        self.create_persons()
+
+        rel1 = Relatives(user_id=1, relative_user_id=2, relation_type='PARENT')
+        rev_rel1 = Relatives(user_id=2, relative_user_id=1, relation_type='CHILD')
+        db.session.add(rel1)
+        db.session.add(rev_rel1)
+        db.session.commit() 
+
+        relations = Relatives.query.all() 
+        # Make sure relations were created
+        assert len(relations) == 2
+
+        alice = User.query.filter_by(id=1).first()
+        result = delete_relative_from_database(db, User, Relatives, alice, 2)
+
+        assert result == True
+        relations = Relatives.query.all() 
+        # Make sure that both relations were deleted
+        assert len(relations) == 0
+

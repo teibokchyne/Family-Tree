@@ -50,7 +50,8 @@ def get_relative_details(db, table, relatives):
                 'first_name': person.first_name,
                 'middle_name': person.middle_name,
                 'last_name': person.last_name,
-                'relationship': rel.relation_type.value
+                'relationship': rel.relation_type.value,
+                'relative_user_id': rel.relative_user_id
             })
     return relative_details
 
@@ -117,3 +118,23 @@ def add_relative_to_database(db, relative_table, relative_enum, user, form):
            )
     )
     app.logger.info(f"Relative added for user {user.username}.")
+
+
+def delete_relative_from_database(db, user_table, relatives_table, user, relative_user_id):
+    app.logger.info(f'Attempt to delete relative {relative_user_id} of user {user.id}')
+    relation = cursor.query(db, relatives_table, filter_by=True, user_id=user.id, relative_user_id=relative_user_id).first()
+    if not relation:
+        app.logger.info(f'Could not find relative of user {user.id} with relative user id {relative_user_id}')
+        flash(f'Could not find relation with relative user id {relative_user_id}')
+        return False 
+    else:
+        reverse_relation = cursor.query(db, relatives_table, filter_by=True, user_id=relative_user_id, relative_user_id=user.id).first()
+        if not reverse_relation:
+            app.logger.info(f'Could not find reverse relation from relative {relative_user_id} to user {user.id}')
+        else:
+            cursor.delete(db, relatives_table, user_id=relative_user_id, relative_user_id=user.id)
+            app.logger.info(f'Successfully deleled reverse relation from relative {relative_user_id} to user {user.id}')
+        cursor.delete(db, relatives_table, user_id=user.id, relative_user_id=relative_user_id)
+        app.logger.info(f'Successfully deleled relation from user {user.id} to relative {relative_user_id}')
+        return True
+            

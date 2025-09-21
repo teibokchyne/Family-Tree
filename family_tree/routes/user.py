@@ -20,7 +20,8 @@ from family_tree.services.user import (
     get_relative_details,
     check_relative_constraints,
     add_relative_to_database,
-    prefill_upsert_relative_form
+    prefill_upsert_relative_form,
+    delete_relative_from_database
 )
 from family_tree.models import (
     User,
@@ -507,3 +508,15 @@ def add_relative():
         'user/add_relative.html',
         form=form
     )
+
+@bp.route('/delete_relative/<int:relative_user_id>', methods = ['POST'])
+@login_required
+def delete_relative(relative_user_id):
+    app.logger.info(f'Delete relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+    result = delete_relative_from_database(db, User, Relatives, current_user, relative_user_id)
+    if result:
+        app.logger.info(f'Deleted successfully relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+        flash('Deleted relative relation successfully!', 'success')
+    else:
+        app.logger.info(f'Delete unsuccessfull: relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
+    return redirect(url_for('user.display_relatives'))

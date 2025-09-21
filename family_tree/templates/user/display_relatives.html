@@ -9,6 +9,7 @@
                 <tr>
                     <th>Relation</th>
                     <th>Name</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -16,6 +17,14 @@
                 <tr>
                     <td>{{ rel.relationship|capitalize }}</td>
                     <td>{{ rel.first_name }} {{ rel.last_name }}</td>
+                    <td>
+                      <form
+                        method="POST"
+                        action="{{ url_for('user.delete_relative', relative_user_id=rel.relative_user_id) }}"
+                        >
+                        <input class="btn btn-danger" type="submit" name="submit" value="Delete">
+                      </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

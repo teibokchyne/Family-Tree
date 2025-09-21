@@ -2,9 +2,13 @@ import pytest
 
 from flask_login import current_user
 
+from family_tree import db, bcrypt
+
 from family_tree.models import (
     User,
+    GenderEnum,
     Person,
+    RelativesTypeEnum,
     Relatives
 )
 
@@ -82,6 +86,67 @@ class TestCommonRoutes:
         assert not current_user.is_authenticated
 
 class TestUserRoutes:
+    def create_users(self):
+        # 1. Create users
+        users = [
+            User(
+                username="alice",
+                email="alice@example.com",
+                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                is_admin=True
+            ),
+            User(
+                username="bob",
+                email="bob@example.com",
+                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                is_admin=False
+            ),
+            User(
+                username="charlie",
+                email="charlie@example.com",
+                password_hash=bcrypt.generate_password_hash("password123").decode('utf-8'),
+                is_admin=False
+            )
+        ]
+
+        db.session.bulk_save_objects(users)
+        db.session.commit()
+
+    def create_persons(self):
+        # Make sure to call this function only if the following users exist already
+        # Fetch user IDs 
+        alice = User.query.filter_by(username="alice").first()
+        bob = User.query.filter_by(username="bob").first()
+        charlie = User.query.filter_by(username="charlie").first()
+
+        # 3. Create persons
+        persons = [
+            Person(
+                user_id=alice.id,
+                gender=GenderEnum.FEMALE,
+                first_name="Alice",
+                middle_name="Marie",
+                last_name="Anderson"
+            ),
+            Person(
+                user_id=bob.id,
+                gender=GenderEnum.MALE,
+                first_name="Bob",
+                middle_name=None,
+                last_name="Brown"
+            ),
+            Person(
+                user_id=charlie.id,
+                gender=GenderEnum.OTHER,
+                first_name="Charlie",
+                middle_name="Lee",
+                last_name="Campbell"
+            )
+        ]
+
+        db.session.bulk_save_objects(persons)
+        db.session.commit()
+
     def test_profile_creation(self, client):
         client.post('/register', data={
             'username': 'newuser',
@@ -935,3 +1000,40 @@ class TestUserRoutes:
         assert reverse_relation.user_id == 1
         assert reverse_relation.relative_user_id == 2
         assert reverse_relation.relation_type.value == 'CHILD'
+
+    def test_delete_relatives(self, client):
+        self.create_users()
+        self.create_persons()
+
+        # TEST 1: WHEN THE RELATION EXISTS
+        rel1 = Relatives(user_id=1, relative_user_id=2, relation_type='PARENT')
+        rev_rel1 = Relatives(user_id=2, relative_user_id=1, relation_type='CHILD')
+        db.session.add(rel1)
+        db.session.add(rev_rel1)
+        db.session.commit() 
+
+        relations = Relatives.query.all() 
+        # Make sure relations were created
+        assert len(relations) == 2
+        
+        # Login user
+        alice = User.query.filter_by(id=1).first()
+        client.post('/login', data={
+            'email' : alice.email,
+            'password' : 'password123'
+        }, follow_redirects = True)
+        response = client.post('/delete_relative/2', follow_redirects = True)
+        client.get('/logout', follow_redirects = True)
+
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Deleted relative relation successfully!' in response.data
+
+        # TEST 2: WHEN RELATION DOES NOT EXIST
+        client.post('/login', data={
+            'email' : alice.email,
+            'password' : 'password123'
+        }, follow_redirects = True)
+        response = client.post('/delete_relative/2', follow_redirects = True)
+
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Could not find relation with relative user id' in response.data
