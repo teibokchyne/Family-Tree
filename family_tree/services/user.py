@@ -224,3 +224,4 @@ def delete_relative_from_database(db, user_table, relatives_table, user, relativ
         app.logger.info(
             f'Successfully deleled relation from user {user.id} to relative {relative_user_id}')
         return True
+    

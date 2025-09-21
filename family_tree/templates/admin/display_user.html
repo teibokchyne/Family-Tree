@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+  {% if user %}
+    Are you sure you want to delete?
+    {{ user.username }}
+    {{ user.person.first_name }} {{user.person.last_name}}
+    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id)}}">
+      <input type="submit" value="Delete">
+    </form>
+  {% endif %}
+{% endblock %}

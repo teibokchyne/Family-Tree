@@ -21,6 +21,24 @@ class User(db.Model, UserMixin):
         'ImportantDates', backref='user', lazy=True, cascade='all, delete-orphan')
     contact_details = db.relationship(
         'ContactDetails', backref='user', lazy=True, cascade='all, delete-orphan')
+    
+    # This user is the source of the relationship (user_id)
+    relatives = db.relationship(
+        'Relatives',
+        foreign_keys='Relatives.user_id',
+        backref='user',
+        cascade='all, delete-orphan',
+        lazy=True
+    )
+
+    # This user is the target of the relationship (relative_user_id)
+    relatives_of = db.relationship(
+        'Relatives',
+        foreign_keys='Relatives.relative_user_id',
+        backref='relative_user',
+        cascade='all, delete-orphan',
+        lazy=True
+    )
 
     def create_password_hash(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')

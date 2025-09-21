@@ -52,12 +52,11 @@ bp = Blueprint('user', __name__)
 
 @bp.before_request
 def restrict_access_to_user():
-    if not current_user.is_authenticated:
+    if not current_user.is_authenticated or current_user.is_admin:
         app.logger.warning("Unauthorized access attempt to user routes.")
         return redirect(url_for('common.login'))
     else:
         app.logger.info(f"User {current_user.username} accessed user routes.")
-
 
 @bp.route('/dashboard')
 @login_required
@@ -537,3 +536,4 @@ def delete_relative(relative_user_id):
         app.logger.info(
             f'Delete unsuccessfull: relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
     return redirect(url_for('user.display_relatives'))
+
