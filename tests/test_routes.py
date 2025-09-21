@@ -1,6 +1,10 @@
 import pytest
 
+from sqlalchemy import or_ 
+
 from flask_login import current_user
+
+from seed import seed_database
 
 from family_tree import db, bcrypt
 
@@ -9,7 +13,11 @@ from family_tree.models import (
     GenderEnum,
     Person,
     RelativesTypeEnum,
-    Relatives
+    Relatives,
+    Address,
+    ImportantDateTypeEnum,
+    ImportantDates,
+    ContactDetails
 )
 
 
@@ -1037,3 +1045,59 @@ class TestUserRoutes:
 
         assert response.status_code == 200 or response.status_code == 302
         assert b'Could not find relation with relative user id' in response.data
+
+class TestAdminRoutes:
+    def test_delete_user(self, client, app):
+        seed_database(app)
+        client.post('/login', data={
+            'email':'alice@example.com',
+            'password':'password123'
+        }, follow_redirects = True)
+
+        # Check that the user exists in all tables
+        user = User.query.filter_by(id=3).all()
+        assert len(user) != 0
+
+        person = Person.query.filter_by(user_id=3).all()
+        assert len(person) != 0
+
+        address = Address.query.filter_by(user_id=3).all()
+        assert len(address) != 0
+
+        contact_details = ContactDetails.query.filter_by(user_id=3).all()
+        assert len(contact_details) != 0
+
+        important_dates = ImportantDates.query.filter_by(user_id=3).all()
+        assert len(important_dates) != 0
+
+        relatives = Relatives.query.filter(
+            or_(Relatives.user_id == 3, Relatives.relative_user_id == 3)
+        ).all()
+        assert len(relatives) != 0       
+
+        # Delete user. Make sure that all corresponding entries in other tables are deleted.
+        response = client.post('/admin/delete_user/3', follow_redirects = True)
+
+        assert response.status_code == 200 or response.status_code == 302
+        assert b'Deleted Successfully!' in response.data
+
+        user = User.query.filter_by(id=3).all()
+        assert len(user) == 0
+
+        person = Person.query.filter_by(user_id=3).all()
+        assert len(person) == 0
+
+        address = Address.query.filter_by(user_id=3).all()
+        assert len(address) == 0
+
+        contact_details = ContactDetails.query.filter_by(user_id=3).all()
+        assert len(contact_details) == 0
+
+        important_dates = ImportantDates.query.filter_by(user_id=3).all()
+        assert len(important_dates) == 0
+
+        relatives = Relatives.query.filter(
+            or_(Relatives.user_id == 3, Relatives.relative_user_id == 3)
+        ).all()
+        assert len(relatives) == 0
+

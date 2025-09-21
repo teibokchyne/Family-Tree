@@ -15,8 +15,10 @@ from family_tree.models import (
 )
 
 
-def seed_database():
-    app = create_app()
+def seed_database(app=None):
+    if not app:
+        app = create_app()
+        
     with app.app_context():
         db.drop_all()
         db.create_all()
@@ -409,5 +411,5 @@ def seed_database():
         db.session.commit()
         print("SEEDING SUCCESSFULL!")
 
-
-seed_database()
+if __name__ == "__main__":
+    seed_database()
