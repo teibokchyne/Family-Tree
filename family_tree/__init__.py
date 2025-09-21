@@ -48,8 +48,14 @@ def create_app(config_class = Config):
     # Import models so they are registered with SQLAlchemy
     from family_tree.models import (
         User, 
+        GenderEnum,
         Person,
-        Address
+        Address,
+        ImportantDateTypeEnum,
+        ImportantDates,
+        ContactDetails,
+        RelativesTypeEnum,
+        Relatives
     )
 
     # Register blueprints
