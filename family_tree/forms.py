@@ -1,4 +1,7 @@
 from flask_wtf import FlaskForm
+
+from flask_wtf.file import FileField, FileAllowed, FileRequired
+
 from wtforms.validators import (
     DataRequired,
     Email,
@@ -15,6 +18,7 @@ from wtforms import (
     IntegerField
 )
 
+
 class LoginForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
@@ -27,6 +31,12 @@ class RegistrationForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Register')
+
+
+class UpsertProfilePictureForm(FlaskForm):
+    picture_filename = FileField('Update Profile Picture', validators=[
+                                 FileRequired(), FileAllowed(['jpg', 'jpeg', 'png'])])
+    submit = SubmitField('Submit')
 
 
 class UpsertPersonForm(FlaskForm):
@@ -59,27 +69,35 @@ class UpsertImportantDateForm(FlaskForm):
     date = DateField('Date', validators=[DataRequired()])
     submit = SubmitField('Submit')
 
+
 class UpsertContactDetailsForm(FlaskForm):
-    country_code = IntegerField('Country Code', default=91, validators=[Optional()])
+    country_code = IntegerField(
+        'Country Code', default=91, validators=[Optional()])
     mobile_no = IntegerField('Mobile Number', validators=[Optional()])
     email = EmailField('Email', validators=[Optional(), Email()])
     submit = SubmitField('Submit')
 
     def validate_mobile_no(self, mobile_no):
         if mobile_no.data and not self.country_code.data:
-            raise ValueError('Country code is required if mobile number is provided.')
-    
+            raise ValueError(
+                'Country code is required if mobile number is provided.')
+
     def validate(self, extra_validators=None):
         rv = super().validate()
         if not rv:
             return False
         if not (self.mobile_no.data or self.email.data):
-            self.mobile_no.errors.append('At least one contact detail (mobile number or email) must be provided.')
-            self.email.errors.append('At least one contact detail (mobile number or email) must be provided.')
+            self.mobile_no.errors.append(
+                'At least one contact detail (mobile number or email) must be provided.')
+            self.email.errors.append(
+                'At least one contact detail (mobile number or email) must be provided.')
             return False
         return True
-    
+
+
 class UpsertRelativeForm(FlaskForm):
-    relative_user_id = SelectField('Relative', choices=[], coerce=int, validators=[DataRequired()])
-    relation_type = SelectField('Relation Type', choices=[], validators=[DataRequired()])
+    relative_user_id = SelectField(
+        'Relative', choices=[], coerce=int, validators=[DataRequired()])
+    relation_type = SelectField(
+        'Relation Type', choices=[], validators=[DataRequired()])
     submit = SubmitField('Add Relative')

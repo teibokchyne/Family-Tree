@@ -14,6 +14,8 @@ from flask_login import current_user, login_required
 from family_tree.cursor import Cursor
 
 from family_tree.services.user import (
+    save_picture,
+    update_profile_picture,
     update_person,
     prefill_address_form,
     fill_address_from_form,
@@ -28,6 +30,7 @@ from family_tree.models import (
     User,
     GenderEnum,
     Person,
+    Picture,
     Address,
     ImportantDateTypeEnum,
     ImportantDates,
@@ -36,6 +39,7 @@ from family_tree.models import (
     Relatives
 )
 from family_tree.forms import (
+    UpsertProfilePictureForm,
     UpsertPersonForm,
     UpsertAddressForm,
     UpsertImportantDateForm,
@@ -58,6 +62,7 @@ def restrict_access_to_user():
     else:
         app.logger.info(f"User {current_user.username} accessed user routes.")
 
+
 @bp.route('/dashboard')
 @login_required
 def dashboard():
@@ -68,14 +73,34 @@ def dashboard():
     return render_template('user/dashboard.html')
 
 
-@bp.route('/profile', methods=['GET', 'POST'])
+@bp.route('/display_profile', methods=['GET', 'POST'])
 @login_required
-def profile():
+def display_profile():
+
+    form = UpsertProfilePictureForm()
+
+    if form.validate_on_submit():
+        picture_filename = save_picture(form.picture_filename.data)
+        update_profile_picture(db, Picture, current_user, picture_filename)
+        flash('Profile Picture Updated!', 'success')
+
+    if current_user.profile_picture:
+        profile_image_url = url_for(
+            'static', filename=f'profile_pictures/{current_user.profile_picture.picture_filename}')
+    else:
+        profile_image_url = None
+
+    return render_template('user/display_profile.html', form=form, user=current_user, profile_image_url=profile_image_url)
+
+
+@bp.route('/edit_profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
     """
-    Render the user's profile page.
+    Render the user's edit profile page.
     """
     app.logger.info(
-        f"Rendering profile page for user {current_user.username}.")
+        f"Rendering edit profile page for user {current_user.username}.")
     form = UpsertPersonForm()
     if request.method == 'GET' and current_user.person:
         form.first_name.data = current_user.person.first_name
@@ -108,7 +133,7 @@ def profile():
                 f"Profile updated for user {current_user.username}.")
 
     return render_template(
-        'user/profile.html',
+        'user/edit_profile.html',
         user=current_user,
         form=form)
 
@@ -511,7 +536,6 @@ def add_relative():
                 f"Relative added for user {current_user.username}.")
             return redirect(url_for('user.add_relative'))
         else:
-            flash('Invalid relative relationship.', 'danger')
             app.logger.warning(
                 f"User {current_user.username} attempted to add invalid relative relationship.")
             return redirect(url_for('user.display_relatives'))
@@ -536,4 +560,3 @@ def delete_relative(relative_user_id):
         app.logger.info(
             f'Delete unsuccessfull: relative_user_id {relative_user_id} from current_user_id {current_user.id} relatives tables')
     return redirect(url_for('user.display_relatives'))
-

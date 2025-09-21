@@ -13,6 +13,8 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.Text, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
+    profile_picture = db.relationship(
+        'Picture', backref='user', uselist=False, cascade='all, delete-orphan')
     person = db.relationship('Person', backref='user',
                              uselist=False, cascade='all, delete-orphan')
     addresses = db.relationship(
@@ -21,7 +23,7 @@ class User(db.Model, UserMixin):
         'ImportantDates', backref='user', lazy=True, cascade='all, delete-orphan')
     contact_details = db.relationship(
         'ContactDetails', backref='user', lazy=True, cascade='all, delete-orphan')
-    
+
     # This user is the source of the relationship (user_id)
     relatives = db.relationship(
         'Relatives',
@@ -41,7 +43,8 @@ class User(db.Model, UserMixin):
     )
 
     def create_password_hash(self, password):
-        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+        self.password_hash = bcrypt.generate_password_hash(
+            password).decode('utf-8')
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
@@ -52,6 +55,11 @@ class User(db.Model, UserMixin):
     # additional_info = db.relationship('AdditionalInfo', backref='person', lazy=True, cascade='all, delete-orphan', uselist=False)
     # photos = db.relationship('Photos', backref='person', lazy=True, cascade='all, delete-orphan')
 
+
+class Picture(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    picture_filename = db.Column(db.String(100), nullable=False)
 
 class GenderEnum(enum.Enum):
     MALE = "MALE"
@@ -120,7 +128,6 @@ class RelativesTypeEnum(enum.Enum):
     STEPSIBLING = "STEPSIBLING"
     SPOUSE = "SPOUSE"
     EXSPOUSE = "EXSPOUSE"
-    UNKNOWN = "UNKNOWN"
 
 
 class Relatives(db.Model):

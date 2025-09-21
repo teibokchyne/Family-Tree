@@ -1,3 +1,8 @@
+import secrets
+import os
+
+from PIL import Image
+
 from flask import (
     flash,
     current_app as app
@@ -6,6 +11,39 @@ from flask import (
 from family_tree.cursor import Cursor
 
 cursor = Cursor()
+
+def save_picture(form_picture):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_picture.filename)
+    picture_filename = random_hex + f_ext 
+    picture_path = os.path.join(app.root_path, 'static/profile_pictures', picture_filename)
+
+    # Resize image before saving
+    output_size = (125, 125)
+    i = Image.open(form_picture)
+    i.thumbnail(output_size)
+
+    # Save the picture
+    i.save(picture_path)
+    
+    app.logger.info(f'Save picture to static/profile_pictures')   
+    return picture_filename
+
+def update_profile_picture(db, picture_table, user, picture_filename):
+    # If user already has a profile picture, delete the current picture in the static folder
+    if user.profile_picture:
+        fn = user.profile_picture.picture_filename
+        picture_path = os.path.join(app.root_path, 'static/profile_pictures', fn)
+        os.remove(picture_path)
+        app.logger.info(f'Remove old profile picture of user {user.username}')
+
+        # Change profile picture filename in database
+        user.profile_picture.picture_filename = picture_filename
+        db.session.commit()
+        app.logger.info(f'Change profile picture filename of user {user.username}')
+    else:
+        cursor.add(db, picture_table, user_id=user.id, picture_filename = picture_filename)
+        app.logger.info(f'Add profile picture for user {user.username}')
 
 
 def update_person(db, user, form):

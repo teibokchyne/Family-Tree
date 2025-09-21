@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="media">
+        {% if profile_image_url %}
+          <img class="rounded-circle account-img" src="{{ profile_image_url }}" alt="profile picture">
+        {% else %}  
+          <img class="rounded-circle account-img" src="{{ url_for('static', filename='profile_pictures/default.jpg') }}" alt="default profile picture">
+        {% endif %}
+        <form method="POST" action="" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+          <div class="form-group mb-3">
+            {{ form.picture_filename.label() }}
+            {{ form.picture_filename(class="form-control-file") }}
+            {% if form.picture_filename.errors%}
+              {% for error in form.picture_filename.errors %}
+                <span class="text-danger">{{ error }}</span><br>
+              {% endfor %}
+            {% endif %}
+          </div>
+          <div class="form-group">
+            {{ form.submit(class="btn btn-primary w-100") }}
+          </div>
+        </form>
+      </div>
+      {% if user %}
+        <div class="col-md-8">
+          <h2 class="mb-4">Profile</h2>
+          <hr>
+          <h4>User Info</h4>
+          <ul class="list-group">
+            <li class="list-group-item"><strong>Username:</strong> {{ user.username }}</li>
+            <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+            <li class="list-group-item"><strong>Name:</strong> {{ user.person.first_name 
+              + (' ' + user.person.middle_name if user.person.middle_name else '') 
+              + ' ' + user.person.last_name }}</li>
+          </ul>
+        </div>
+      {% else %}
+        No user found
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

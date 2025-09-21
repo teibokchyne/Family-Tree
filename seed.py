@@ -18,7 +18,7 @@ from family_tree.models import (
 def seed_database(app=None):
     if not app:
         app = create_app()
-        
+
     with app.app_context():
         db.drop_all()
         db.create_all()
@@ -223,17 +223,6 @@ def seed_database(app=None):
         # Create relationships and reverse relationships
         relationships = []
 
-        # 1 <-> 2: SIBLING
-        relationships.append(Relatives(
-            user_id=1,
-            relative_user_id=2,
-            relation_type=RelativesTypeEnum.SIBLING
-        ))
-        relationships.append(Relatives(
-            user_id=2,
-            relative_user_id=1,
-            relation_type=RelativesTypeEnum.SIBLING
-        ))
 
         # 3 -> 4: PARENT, 4 -> 3: CHILD
         relationships.append(Relatives(
@@ -259,30 +248,6 @@ def seed_database(app=None):
             relation_type=RelativesTypeEnum.STEPCHILD
         ))
 
-        # 7 <-> 8: HALFSIBLING
-        relationships.append(Relatives(
-            user_id=7,
-            relative_user_id=8,
-            relation_type=RelativesTypeEnum.HALFSIBLING
-        ))
-        relationships.append(Relatives(
-            user_id=8,
-            relative_user_id=7,
-            relation_type=RelativesTypeEnum.HALFSIBLING
-        ))
-
-        # 9 <-> 10: STEPSIBLING
-        relationships.append(Relatives(
-            user_id=9,
-            relative_user_id=10,
-            relation_type=RelativesTypeEnum.STEPSIBLING
-        ))
-        relationships.append(Relatives(
-            user_id=10,
-            relative_user_id=9,
-            relation_type=RelativesTypeEnum.STEPSIBLING
-        ))
-
         # 11 <-> 12: EXSPOUSE (bidirectional)
         relationships.append(Relatives(
             user_id=11,
@@ -293,18 +258,6 @@ def seed_database(app=None):
             user_id=12,
             relative_user_id=11,
             relation_type=RelativesTypeEnum.EXSPOUSE
-        ))
-
-        # 13 <-> 14: UNKNOWN
-        relationships.append(Relatives(
-            user_id=13,
-            relative_user_id=14,
-            relation_type=RelativesTypeEnum.UNKNOWN
-        ))
-        relationships.append(Relatives(
-            user_id=14,
-            relative_user_id=13,
-            relation_type=RelativesTypeEnum.UNKNOWN
         ))
 
         # For the rest, create some mixed parent-child relationships for demo
@@ -346,18 +299,6 @@ def seed_database(app=None):
             relation_type=RelativesTypeEnum.STEPCHILD
         ))
 
-        # User 3 -> User 7 (UNKNOWN), User 7 -> User 3 (UNKNOWN)
-        relationships.append(Relatives(
-            user_id=3,
-            relative_user_id=7,
-            relation_type=RelativesTypeEnum.UNKNOWN
-        ))
-        relationships.append(Relatives(
-            user_id=7,
-            relative_user_id=3,
-            relation_type=RelativesTypeEnum.UNKNOWN
-        ))
-
         # User 8 -> User 3 (CHILD -> PARENT)
         relationships.append(Relatives(
             user_id=8,
@@ -392,18 +333,6 @@ def seed_database(app=None):
             user_id=3,
             relative_user_id=10,
             relation_type=RelativesTypeEnum.CHILD
-        ))
-
-        # User 11 -> User 3 (UNKNOWN)
-        relationships.append(Relatives(
-            user_id=11,
-            relative_user_id=3,
-            relation_type=RelativesTypeEnum.UNKNOWN
-        ))
-        relationships.append(Relatives(
-            user_id=3,
-            relative_user_id=11,
-            relation_type=RelativesTypeEnum.UNKNOWN
         ))
 
         # Commit to DB

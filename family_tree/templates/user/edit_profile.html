@@ -2,6 +2,13 @@
 {% block content %}
   <div class="container mt-5">
     <div class="row justify-content-center">
+      <div class="media">
+        {% if profile_image_url %}
+          <img class="rounded-circle account-img" src="{{ profile_image_url }}" alt="profile picture">
+        {% else %}  
+          <img class="rounded-circle account-img" src="{{ url_for('static', filename='profile_pictures/default.jpg') }}" alt="default profile picture">
+        {% endif %}
+      </div>
       <div class="col-md-8">
         <h2 class="mb-4">Profile</h2>
         <form method="POST" action="">
