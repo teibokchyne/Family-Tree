@@ -35,8 +35,8 @@ class TestUserUI:
         }, follow_redirects=True)
         response = client.get('/address')
         assert response.status_code == 200
-        assert (b'Your Addresses' in response.data
-                or b'You have not added any addresses yet.' in response.data)
+        assert (b'Add Another Address' in response.data
+                or (b'Edit' in response.data and b'Delete' in response.data))
 
     def test_add_address_page_renders(self, client):
         client.post('/register', data={

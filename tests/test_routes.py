@@ -90,7 +90,7 @@ class TestCommonRoutes:
 
         response = client.get('/logout', follow_redirects=True)
         print(response.data.decode())
-        assert b'Welcome to Family Tree. Please log in to continue' in response.data
+        assert b'Welcome to Your Digital Family' in response.data
         assert not current_user.is_authenticated
 
 class TestUserRoutes:
@@ -167,7 +167,7 @@ class TestUserRoutes:
             'password': 'pass',
         }, follow_redirects=True)
 
-        response = client.post('/profile', data={
+        response = client.post('/edit_profile', data={
             'first_name': 'John',
             'middle_name': 'M',
             'last_name': 'Doe',
@@ -191,14 +191,14 @@ class TestUserRoutes:
         }, follow_redirects=True)
 
         # Create initial profile
-        client.post('/profile', data={
+        client.post('/edit_profile', data={
             'first_name': 'John',
             'middle_name': 'M',
             'last_name': 'Doe',
             'gender': 'MALE'
         })
 
-        response = client.post('/profile', data={
+        response = client.post('/edit_profile', data={
             'first_name': 'Jane',
             'middle_name': 'A',
             'last_name': 'Smith',
@@ -224,7 +224,9 @@ class TestUserRoutes:
         # Now, access the address page
         response = client.get('/address')
         assert response.status_code == 200
-        assert b'Your Addresses' in response.data or b'No Addresses Found' in response.data
+        assert (b'Permanent Address' in response.data 
+        or b'Current Address' in response.data
+        or b'Add Another Address' in response.data)
 
     def test_add_address_success(self, client):
         client.post('/register', data={
@@ -790,7 +792,7 @@ class TestUserRoutes:
         # Check that the contact is in the database
         user = User.query.filter_by(email='contactuser@example.com').first()
         contacts = ContactDetails.query.filter_by(user_id=user.id).all()
-        assert any(c.mobile_no == 9876543210 and c.email ==
+        assert any(c.mobile_no == '9876543210' and c.email ==
                    'contactuser@example.com' for c in contacts)
         
         # CASE 2: WHEN ONLY MOBILE NO IS FILLED
@@ -805,7 +807,7 @@ class TestUserRoutes:
         # Check that the contact is in the database
         user = User.query.filter_by(email='contactuser@example.com').first()
         contacts = ContactDetails.query.filter_by(user_id=user.id).all()
-        assert any(c.mobile_no == 9876523432 for c in contacts)
+        assert any(c.mobile_no == '9876523432' for c in contacts)
 
         # CASE 3: WHEN ONLY EMAIL FIELD IS FILLED
         # Add contact details
@@ -860,7 +862,7 @@ class TestUserRoutes:
         updated = ContactDetails.query.filter_by(id=contact_id).first()
         assert updated is not None
         assert updated.country_code == 1
-        assert updated.mobile_no == 5555555555
+        assert updated.mobile_no == '5555555555'
         assert updated.email == 'newemail@example.com'
 
     def test_edit_contact_details_not_found(self, client):
@@ -955,7 +957,7 @@ class TestUserRoutes:
         }, follow_redirects=True)
 
         # Create profile
-        client.post('/profile', data={
+        client.post('/edit_profile', data={
             'first_name': 'John',
             'middle_name': 'M',
             'last_name': 'Doe',
@@ -979,7 +981,7 @@ class TestUserRoutes:
         }, follow_redirects=True)
 
         # Create profile for second user
-        client.post('/profile', data={
+        client.post('/edit_profile', data={
             'first_name': 'Jane',
             'middle_name': 'M',
             'last_name': 'Doe',
@@ -1014,8 +1016,8 @@ class TestUserRoutes:
         self.create_persons()
 
         # TEST 1: WHEN THE RELATION EXISTS
-        rel1 = Relatives(user_id=1, relative_user_id=2, relation_type='PARENT')
-        rev_rel1 = Relatives(user_id=2, relative_user_id=1, relation_type='CHILD')
+        rel1 = Relatives(user_id=2, relative_user_id=3, relation_type='PARENT')
+        rev_rel1 = Relatives(user_id=3, relative_user_id=2, relation_type='CHILD')
         db.session.add(rel1)
         db.session.add(rev_rel1)
         db.session.commit() 
@@ -1025,12 +1027,12 @@ class TestUserRoutes:
         assert len(relations) == 2
         
         # Login user
-        alice = User.query.filter_by(id=1).first()
+        bob = User.query.filter_by(id=2).first()
         client.post('/login', data={
-            'email' : alice.email,
+            'email' : bob.email,
             'password' : 'password123'
         }, follow_redirects = True)
-        response = client.post('/delete_relative/2', follow_redirects = True)
+        response = client.post('/delete_relative/3', follow_redirects = True)
         client.get('/logout', follow_redirects = True)
 
         assert response.status_code == 200 or response.status_code == 302
@@ -1038,7 +1040,7 @@ class TestUserRoutes:
 
         # TEST 2: WHEN RELATION DOES NOT EXIST
         client.post('/login', data={
-            'email' : alice.email,
+            'email' : bob.email,
             'password' : 'password123'
         }, follow_redirects = True)
         response = client.post('/delete_relative/2', follow_redirects = True)
